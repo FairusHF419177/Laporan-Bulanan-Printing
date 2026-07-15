@@ -1,0 +1,543 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+.lh-app{
+  --bg:#14171c; --surface:#1c2027; --surface2:#242933; --surface3:#2c3240;
+  --border:#333a48; --text:#eceef1; --muted:#8a93a6; --muted2:#5d6577;
+  --p1:#f2a93b; --p2:#3fa796; --p3:#9186e0; --p4:#e8607a; --sp:#5b96c9;
+  --good:#4caf7d; --bad:#e0616f; --warn:#e0b34c;
+  font-family:'Inter',sans-serif; color:var(--text); background:var(--bg);
+  border-radius:14px; overflow:hidden; max-width:900px; margin:0 auto;
+}
+.lh-app *{box-sizing:border-box;}
+.lh-head{padding:20px 22px 16px; background:linear-gradient(180deg,#191d24,#14171c); border-bottom:1px solid var(--border);}
+.lh-head h1{font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin:0 0 2px;}
+.lh-head p{margin:0; color:var(--muted); font-size:12.5px;}
+.lh-setup{
+  margin:12px 22px 0; padding:12px 14px; background:#241f14; border:1px solid #4a3c1f; border-radius:10px;
+  font-size:12px; color:#e0c48c; line-height:1.6;
+}
+.lh-setup input{
+  width:100%; margin-top:8px; background:#14171c; border:1px solid #4a3c1f; color:var(--text);
+  padding:8px 10px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:11.5px;
+}
+.lh-tabs{display:flex; gap:6px; padding:14px 22px 0; overflow-x:auto;}
+.lh-tab{
+  flex:0 0 auto; display:flex; align-items:center; gap:7px; cursor:pointer;
+  padding:9px 14px; border-radius:9px 9px 0 0; font-size:12.5px; font-weight:600;
+  color:var(--muted); background:transparent; border:1px solid transparent; border-bottom:none;
+  font-family:'Space Grotesk',sans-serif;
+}
+.lh-tab .dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);}
+.lh-tab.active{background:var(--surface); color:var(--text); border-color:var(--border);}
+.lh-tab.active .dot{background:var(--accent);}
+.lh-body{background:var(--surface); padding:20px 22px 26px;}
+.lh-section-title{font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:700; letter-spacing:1.2px; color:var(--accent); text-transform:uppercase; margin:22px 0 10px;}
+.lh-section-title:first-child{margin-top:0;}
+.lh-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.lh-grid.g2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:640px){.lh-grid{grid-template-columns:repeat(2,1fr);} .lh-grid.g2{grid-template-columns:1fr;}}
+.lh-field label{display:block; font-size:11px; font-weight:600; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;}
+.lh-field input[type=text], .lh-field input[type=number], .lh-field input[type=date], .lh-field select, .lh-field textarea{
+  width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  padding:10px 11px; border-radius:8px; font-size:14px; outline:none;
+}
+.lh-field textarea{resize:vertical; min-height:56px;}
+.lh-shift{display:flex; gap:8px;}
+.lh-shift button{flex:1; padding:10px 0; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; cursor:pointer;}
+.lh-shift button.active{background:var(--accent); border-color:var(--accent); color:#14171c;}
+.lh-counter{background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px;}
+.lh-counter-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+.lh-counter-head .name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px;}
+.lh-counter-head .name .tag{color:var(--accent);}
+.lh-counter-head .pakai{font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; background:var(--surface3); padding:3px 9px; border-radius:20px;}
+.lh-counter-row{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.lh-counter-row .lh-field label{font-size:9.5px;}
+.lh-counter-row input{font-family:'JetBrains Mono',monospace; text-align:center; font-weight:600;}
+.lh-btn{border:none; border-radius:9px; padding:12px 18px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;}
+.lh-btn-primary{background:var(--accent); color:#14171c; width:100%; padding:14px; font-size:14.5px; margin-top:18px;}
+.lh-btn:disabled{opacity:.5; cursor:default;}
+.lh-log{margin-top:26px;}
+.lh-log-empty{color:var(--muted2); font-size:13px; padding:18px 0; text-align:center;}
+.lh-entry{border:1px solid var(--border); background:var(--surface2); border-radius:10px; padding:12px 14px; margin-bottom:8px;}
+.lh-entry .meta{font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:3px;}
+.lh-entry .main{font-size:13.5px; font-weight:600;}
+.lh-entry .sub{font-size:12px; color:var(--muted); margin-top:3px;}
+.lh-toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#20252d; color:var(--text); border:1px solid var(--border); padding:10px 18px; border-radius:30px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.4); z-index:999; opacity:0; pointer-events:none; transition:opacity .25s;}
+.lh-toast.show{opacity:1;}
+.lh-note{font-size:11.5px; color:var(--muted2); margin-top:8px; line-height:1.5;}
+datalist{display:none;}
+</style>
+
+<div class="lh-app" id="lhApp">
+  <div class="lh-head">
+    <h1>Laporan Produksi &amp; Sparepart</h1>
+    <p>Versi master &middot; 1 link form untuk semua bulan &middot; tinggal ganti ID spreadsheet tiap bulan &middot; warna tinta otomatis</p>
+  </div>
+  <div class="lh-setup" id="lhSetup" style="display:none">
+    ⚠️ Perlu diisi sebelum mulai (lihat AppsScript_Code_MASTER.gs untuk cara deploy):
+    <input type="text" id="scriptUrlInput" placeholder="URL Web App Apps Script (permanen, sekali isi) — https://script.google.com/macros/s/xxxxx/exec">
+    <input type="text" id="sheetIdInput" placeholder="Link atau ID Spreadsheet BULAN INI — ganti tiap bulan" style="margin-top:8px">
+  </div>
+  <div class="lh-setup" id="lhSetupOk" style="display:none; background:#14241a; border-color:#2f5c3f; color:#9adfb3">
+    ✅ Terhubung ke spreadsheet: <span id="activeSheetLabel" style="font-family:'JetBrains Mono',monospace"></span>
+    &nbsp;<a href="#" id="changeSheetLink" style="color:#9adfb3; text-decoration:underline">ganti</a>
+  </div>
+  <div class="lh-tabs" id="lhTabs"></div>
+  <div class="lh-body" id="lhBody"><div style="padding:40px 0;text-align:center;color:var(--muted)">Memuat…</div></div>
+</div>
+<div class="lh-toast" id="lhToast"></div>
+
+<script>
+(function(){
+
+// ================== KONFIGURASI ==================
+// 1) URL Web App Apps Script MASTER Anda -- isi SEKALI, berlaku selamanya untuk semua bulan.
+var SCRIPT_URL = "PASTE_APPS_SCRIPT_WEB_APP_URL_DI_SINI";
+// 2) ID spreadsheet bulan ini -- default di bawah bisa dikosongkan/diganti tiap bulan
+//    lewat kotak di form, atau dengan membuka file ini dengan ?sheet=ID_SPREADSHEET di URL.
+var SPREADSHEET_ID = "1wRsLrSrdx0_CDZxR_s0uVHQXfG7KXuKm7KXhocVxwhU";
+// ==================================================
+
+function extractSheetId(input){
+  if(!input) return "";
+  var m = input.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  if(m) return m[1];
+  return input.trim();
+}
+function getUrlParam(name){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }catch(e){ return null; }
+}
+
+var MACHINES = ['INP1','INP2','INP3','INP4'];
+var META = {
+  INP1:{label:'Mesin 1', short:'M1', color:'#f2a93b'},
+  INP2:{label:'Mesin 2', short:'M2', color:'#3fa796'},
+  INP3:{label:'Mesin 3', short:'M3', color:'#9186e0'},
+  INP4:{label:'Mesin 4', short:'M4', color:'#e8607a'},
+  SPAREPART:{label:'Sparepart', short:'SP', color:'#5b96c9'}
+};
+
+var PRODUCTS = {
+  "BOLA MERAH": {types:["150","200"], colors:["RED"]},
+  "ASIA CROFFLE": {types:["22s"], colors:["ORANGE","PINK"]},
+  "LETS TAKE COFFEE": {types:["200"], colors:["BROWN","GOLD"]},
+  "ICE TEA": {types:["16oz","22s"], colors:["WHITE","YELLOW","GREEN","OLD GREEN"]},
+  "TEA RAS": {types:["22s"], colors:["YELLOW","GREEN","BLACK"]},
+  "HOTWAYS": {types:["22s"], colors:["YELLOW","RED","WHITE"]},
+  "RASRMD": {types:["22s"], colors:["YELLOW","OLD GREEN","WHITE"]},
+  "ES DEGAN": {types:["22s","22b"], colors:["GREEN","OLD GREEN","WHITE"]},
+  "COFFEE": {types:["16oz"], colors:["D.CHOCO","CHOCO","CREAM","RED","WHITE","SKIN"]},
+  "I JUICE": {types:["16oz","22s"], colors:["YELLOW","ORANGE","RED","GREEN","BLACK","WHITE"]},
+  "HBD": {types:["22s"], colors:["L.RED","RED","L.BLUE","D.BLUE","YELLOW","GREEN","D.GREEN"]},
+  "WALDO": {types:["12n"], colors:["BLACK","BROWN","ORANGE"]},
+  "KRISTAL": {types:["14u"], colors:["BLACK","RED","YELLOW"]},
+  "JERUK PERAS": {types:["22s"], colors:["BLACK","GREEN","ORANGE"]},
+  "SUSU SAPI BLUE": {types:["150"], colors:["BLACK","GREY","RED","CREAM","OLD BLUE","BLUE"]},
+  "SUSU KAMBING PINK": {types:["150"], colors:["BLACK","GREY","RED","CREAM","OLD BLUE","PINK"]},
+  "TEA OCA": {types:["16oz","22s","22b","26b"], colors:["CREAM","MAGENTA","GREEN","BLACK"]}
+};
+var PRODUCT_NAMES = Object.keys(PRODUCTS);
+
+var SPAREPARTS = [
+["BEARING","1200","ROLL DIAMETER 60"],["BEARING","6000",""],["BEARING","6002","BEARING SCREW INFEED"],
+["BEARING","6003","PEMUTAR MANDRILL P1"],["BEARING","6004","VACUUM MOTOR"],["BEARING","6005","MANDRILL 8PCS/SET/MESIN"],
+["BEARING","6006","MANDRILL 8PCS/SET/MESIN"],["BEARING","6008",""],["BEARING","6201",""],["BEARING","6202",""],
+["BEARING","6203",""],["BEARING","6204","ROTARY JOINT"],["BEARING","6205",""],["BEARING","6206","VACUUM MOTOR"],
+["BEARING","6208",""],["BEARING","6209",""],["BEARING","6301",""],["BEARING","6306",""],["BEARING","6307",""],
+["BEARING","6308",""],["BEARING","6803",""],["BEARING","6904","ROLL DIAMETER 80"],["BEARING","607",""],
+["BEARING","CSK30-PP","ONE WAY ROLL CHILLER"],["BEARING","CF10B","SWING ROLL"],["BEARING","PSH10","TAROT SWING ROLL"],
+["BEARING","PSH10L","TAROT SWING ROLL"],["BEARING","H-E20205 J","GEARBOX BIGDRUM P1"],
+["BEARING","H-E20206 J","GEARBOX BIGDRUM P3"],["BEARING","NK 25/16R","ROLL BESI"],
+["BEARING","30205 JR","BEARING PAYUNG GEARBOX BIGDRUM P2, P3, P4"],["BEARING","30206 JR","BEARING PAYUNG GEARBOX BIGDRUM P2, P3, P5"],
+["BEARING","30207 JR","BEARING PAYUNG GEARBOX BIGDRUM P1"],["BEARING","KSM 51104",""],
+["VBELT","14M-1440-70",""],["VBELT","14M-1540-70","GEARBOX UTAMA P1"],["VBELT","5M-360-15","SCREW INFEED P2 & P3"],
+["VBELT","5M-385-15","SCREW INFEED P1"],["VBELT","5M-920",""],["VBELT","8M-1120-25","JOIN SCREW KE GEARBOX P1"],
+["VBELT","8M-1400-25","GEARBOX KE ATAS JOIN P1"],["VBELT","8M-2560","DINAMO UTAMA KE GEARBOX"],["VBELT","8M-440",""],
+["VBELT","8M-688-40",""],["VBELT","8M-776",""],["VBELT","8M-800-40",""],["VBELT","DS 1000X5","CUP OUT KE DINAMO"],
+["VBELT","DS 5M-1945X20","SCREW INFEED P3"],["VBELT","DS 5M-2100X20","SCREW INFEED P2"],
+["VBELT","DS 5M-2420-5","SCREW INFEED P1"],["VBELT","DS 5M-2420X15","SCREW INFEED P1"],
+["VBELT","DS D360L-44","CUP OUT KE DINAMO"],["VBELT","M-17","PEMUTAR MANDRILL ATAS P1"],
+["VBELT","M-21","PEMUTAR MANDRILL BAWAH P1"],["VBELT","M-24","PEMUTAR MANDRILL BAWAH P1"],
+["VBELT","S14M-1540-70","GEARBOX UTAMA P1"]
+];
+
+// Kolom target di sheet (1-based), sesuai layout laporan_bulanan_v3.xlsx
+// A TANGGAL(1) B SHIFT(2) C PRODUK(3) D TIPE(4) E HASIL(5) F R.POLOS(6) G R.PRINT(7) H JUMLAH[formula]
+// I C1(9) J C1.AWAL(10) K C1.AMBIL(11) L C1.AKHIR(12) M C1.PAKAI[formula]
+// ... pola sama tiap 5 kolom untuk C2..C7
+// AR M AWAL(44) AS M AMBIL(45) AT M AKHIR(46) AU M PAKAI[formula]
+// AV KETERANGAN(48) AW PELAPOR(49)
+var COLOR_BLOCK_START = 9; // I
+var METHANOL_AWAL_COL = 44;
+var KETERANGAN_COL = 48;
+var PELAPOR_COL = 49;
+
+var cache = {INP1:[],INP2:[],INP3:[],INP4:[],SPAREPART:[]};
+var activeTab = 'INP1';
+var draftShift = {INP1:1,INP2:1,INP3:1,INP4:1};
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function esc(s){ return (s===undefined||s===null)?'':String(s).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function toast(msg){
+  var t=document.getElementById('lhToast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+function checkSetup(){
+  var urlSheet = getUrlParam('sheet');
+  if(urlSheet){ SPREADSHEET_ID = extractSheetId(urlSheet); }
+
+  var needsScript = !SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0;
+  var needsSheet = !SPREADSHEET_ID;
+
+  if(needsScript || needsSheet){
+    document.getElementById('lhSetup').style.display = 'block';
+    document.getElementById('lhSetupOk').style.display = 'none';
+    var scriptInput = document.getElementById('scriptUrlInput');
+    var sheetInput = document.getElementById('sheetIdInput');
+    if(!needsScript) scriptInput.value = SCRIPT_URL;
+    if(!needsSheet) sheetInput.value = SPREADSHEET_ID;
+    scriptInput.addEventListener('change', function(){
+      SCRIPT_URL = scriptInput.value.trim();
+      if(SCRIPT_URL) toast('URL Apps Script disimpan untuk sesi ini.');
+    });
+    sheetInput.addEventListener('change', function(){
+      SPREADSHEET_ID = extractSheetId(sheetInput.value);
+      if(SPREADSHEET_ID){
+        toast('Spreadsheet bulan ini disimpan untuk sesi ini.');
+        showConnectedBadge();
+      }
+    });
+    return false;
+  }
+  showConnectedBadge();
+  return true;
+}
+
+function showConnectedBadge(){
+  if(!SPREADSHEET_ID) return;
+  document.getElementById('lhSetup').style.display = 'none';
+  document.getElementById('lhSetupOk').style.display = 'block';
+  document.getElementById('activeSheetLabel').textContent = SPREADSHEET_ID;
+  document.getElementById('changeSheetLink').onclick = function(ev){
+    ev.preventDefault();
+    document.getElementById('lhSetup').style.display = 'block';
+    document.getElementById('lhSetupOk').style.display = 'none';
+    document.getElementById('sheetIdInput').value = SPREADSHEET_ID;
+  };
+}
+
+async function sendToSheet(sheetName, values){
+  var scriptInput = document.getElementById('scriptUrlInput');
+  var sheetInput = document.getElementById('sheetIdInput');
+  if((!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0) && scriptInput && scriptInput.value.trim()){
+    SCRIPT_URL = scriptInput.value.trim();
+  }
+  if(!SPREADSHEET_ID && sheetInput && sheetInput.value.trim()){
+    SPREADSHEET_ID = extractSheetId(sheetInput.value);
+  }
+  if(!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0){
+    toast('Belum ada URL Apps Script. Tempel dulu di kotak atas.');
+    return false;
+  }
+  if(!SPREADSHEET_ID){
+    toast('Belum ada ID spreadsheet bulan ini. Tempel dulu di kotak atas.');
+    return false;
+  }
+  try{
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ spreadsheetId: SPREADSHEET_ID, sheet: sheetName, values: values })
+    });
+    // mode no-cors -> respons tidak bisa dibaca, kita anggap terkirim
+    return true;
+  }catch(e){
+    toast('Gagal mengirim (cek koneksi internet).');
+    return false;
+  }
+}
+
+function renderTabs(){
+  var wrap = document.getElementById('lhTabs');
+  var order = ['INP1','INP2','INP3','INP4','SPAREPART'];
+  wrap.innerHTML = order.map(function(k){
+    var m = META[k];
+    var count = (cache[k]||[]).filter(function(e){return e.tanggal===todayStr();}).length;
+    return '<div class="lh-tab'+(k===activeTab?' active':'')+'" data-tab="'+k+'" style="--accent:'+m.color+'">'+
+      '<span class="dot"></span>'+m.short+
+      (count>0?' <span style="opacity:.6">('+count+')</span>':'')+
+      '</div>';
+  }).join('');
+  Array.prototype.forEach.call(wrap.querySelectorAll('.lh-tab'), function(el){
+    el.addEventListener('click', function(){ switchTab(el.getAttribute('data-tab')); });
+  });
+}
+
+function switchTab(tab){
+  activeTab = tab;
+  renderTabs();
+  if(tab==='SPAREPART') renderSparepartPanel(); else renderMachinePanel(tab);
+}
+
+function renderMachinePanel(tab){
+  var m = META[tab];
+  var body = document.getElementById('lhBody');
+  body.style.setProperty('--accent', m.color);
+  var productOptions = PRODUCT_NAMES.map(function(p){return '<option value="'+esc(p)+'">'+esc(p)+'</option>';}).join('');
+
+  body.innerHTML =
+    '<div class="lh-section-title">Laporan '+m.label+'</div>'+
+    '<div class="lh-grid" style="margin-top:6px">'+
+      '<div class="lh-field"><label>Tanggal</label><input type="date" id="f_tanggal" value="'+todayStr()+'"></div>'+
+      '<div class="lh-field"><label>Shift</label><div class="lh-shift" id="f_shift">'+
+        [1,2,3].map(function(s){return '<button type="button" data-shift="'+s+'" class="'+(draftShift[tab]===s?'active':'')+'">'+s+'</button>';}).join('')+
+      '</div></div>'+
+      '<div class="lh-field"><label>Produk</label><select id="f_produk">'+productOptions+'</select></div>'+
+    '</div>'+
+    '<div class="lh-grid g2" style="margin-top:10px">'+
+      '<div class="lh-field"><label>Tipe</label><select id="f_tipe"></select></div>'+
+      '<div class="lh-field"><label>Nama Pelapor</label><input type="text" id="f_pelapor" placeholder="Nama operator"></div>'+
+    '</div>'+
+    '<div class="lh-section-title">Hasil Produksi</div>'+
+    '<div class="lh-grid">'+
+      '<div class="lh-field"><label>Hasil (pcs)</label><input type="number" id="f_hasil" min="0"></div>'+
+      '<div class="lh-field"><label>Reject Polos</label><input type="number" id="f_rpolos" min="0"></div>'+
+      '<div class="lh-field"><label>Reject Print</label><input type="number" id="f_rprint" min="0"></div>'+
+    '</div>'+
+    '<div class="lh-counter" style="margin-top:10px"><div class="lh-counter-head"><div class="name">JUMLAH (Hasil + Reject Polos + Reject Print)</div><div class="pakai" id="f_jumlah_display">0</div></div></div>'+
+    '<div class="lh-section-title">Pemakaian Tinta (Drum)</div>'+
+    '<div id="f_colors"></div>'+
+    '<div class="lh-section-title">Pemakaian Methanol</div>'+
+    '<div id="f_methanol"></div>'+
+    '<div class="lh-section-title">Keterangan</div>'+
+    '<div class="lh-field"><textarea id="f_ket" placeholder="Catatan gangguan, setting, perbaikan, dll."></textarea></div>'+
+    '<button class="lh-btn lh-btn-primary" id="btnSave">Simpan Laporan</button>'+
+    '<div class="lh-note">Ada 2 produk dalam shift yang sama? Simpan laporan produk pertama, lalu ulangi form dengan tanggal &amp; shift yang sama untuk produk kedua — keduanya masuk sebagai baris terpisah.</div>'+
+    '<div class="lh-log"><div class="lh-section-title">Laporan Terakhir Dikirim (sesi ini)</div><div id="logList"></div></div>';
+
+  Array.prototype.forEach.call(document.getElementById('f_shift').querySelectorAll('button'), function(b){
+    b.addEventListener('click', function(){
+      draftShift[tab] = parseInt(b.getAttribute('data-shift'),10);
+      Array.prototype.forEach.call(document.getElementById('f_shift').querySelectorAll('button'), function(x){x.classList.remove('active');});
+      b.classList.add('active');
+    });
+  });
+
+  var produkSel = document.getElementById('f_produk');
+  produkSel.addEventListener('change', updateTipeAndColors);
+  function updateTipeAndColors(){
+    var info = PRODUCTS[produkSel.value] || {types:[],colors:[]};
+    document.getElementById('f_tipe').innerHTML = info.types.map(function(t){return '<option value="'+esc(t)+'">'+esc(t)+'</option>';}).join('');
+    document.getElementById('f_colors').innerHTML = info.colors.map(function(c, idx){ return colorCard('C'+(idx+1), c); }).join('');
+    document.getElementById('f_methanol').innerHTML = methanolCard();
+    attachPakaiListeners();
+  }
+  function colorCard(code, colorName){
+    return '<div class="lh-counter" data-color-code="'+esc(code)+'" data-color-name="'+esc(colorName)+'">'+
+      '<div class="lh-counter-head"><div class="name">'+code+' &middot; <span class="tag">'+esc(colorName)+'</span></div><div class="pakai" data-pakai="0">PAKAI 0</div></div>'+
+      '<div class="lh-counter-row">'+
+        '<div class="lh-field"><label>Awal</label><input type="number" class="c-awal" min="0" value="0"></div>'+
+        '<div class="lh-field"><label>Ambil</label><input type="number" class="c-ambil" min="0" value="0"></div>'+
+        '<div class="lh-field"><label>Akhir</label><input type="number" class="c-akhir" min="0" value="0"></div>'+
+      '</div></div>';
+  }
+  function methanolCard(){
+    return '<div class="lh-counter" data-methanol="1">'+
+      '<div class="lh-counter-head"><div class="name">METHANOL</div><div class="pakai" data-pakai="0">PAKAI 0</div></div>'+
+      '<div class="lh-counter-row">'+
+        '<div class="lh-field"><label>Awal</label><input type="number" class="c-awal" min="0" value="0"></div>'+
+        '<div class="lh-field"><label>Ambil</label><input type="number" class="c-ambil" min="0" value="0"></div>'+
+        '<div class="lh-field"><label>Akhir</label><input type="number" class="c-akhir" min="0" value="0"></div>'+
+      '</div></div>';
+  }
+  function attachPakaiListeners(){
+    Array.prototype.forEach.call(document.querySelectorAll('#f_colors .lh-counter, #f_methanol .lh-counter'), function(card){
+      var awal=card.querySelector('.c-awal'), ambil=card.querySelector('.c-ambil'), akhir=card.querySelector('.c-akhir');
+      var pakaiEl = card.querySelector('[data-pakai]');
+      function recalc(){
+        var v = (parseFloat(awal.value)||0)+(parseFloat(ambil.value)||0)-(parseFloat(akhir.value)||0);
+        pakaiEl.textContent = 'PAKAI '+v; pakaiEl.setAttribute('data-pakai', v);
+      }
+      [awal,ambil,akhir].forEach(function(i){ i.addEventListener('input', recalc); });
+    });
+  }
+  updateTipeAndColors();
+
+  function recalcJumlah(){
+    var h = parseFloat(document.getElementById('f_hasil').value)||0;
+    var rp = parseFloat(document.getElementById('f_rpolos').value)||0;
+    var rpr = parseFloat(document.getElementById('f_rprint').value)||0;
+    document.getElementById('f_jumlah_display').textContent = (h+rp+rpr);
+  }
+  ['f_hasil','f_rpolos','f_rprint'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', recalcJumlah);
+  });
+
+  document.getElementById('btnSave').addEventListener('click', function(){ saveMachineEntry(tab); });
+  renderLog(tab);
+}
+
+async function saveMachineEntry(tab){
+  var tanggal = document.getElementById('f_tanggal').value;
+  var produk = document.getElementById('f_produk').value;
+  var tipe = document.getElementById('f_tipe').value;
+  if(!tanggal || !produk || !tipe){ toast('Lengkapi tanggal, produk, dan tipe dulu.'); return; }
+
+  var values = {};
+  values[1] = tanggal;
+  values[2] = draftShift[tab];
+  values[3] = produk;
+  values[4] = tipe;
+  values[5] = parseFloat(document.getElementById('f_hasil').value)||0;
+  values[6] = parseFloat(document.getElementById('f_rpolos').value)||0;
+  values[7] = parseFloat(document.getElementById('f_rprint').value)||0;
+
+  var colorCards = document.querySelectorAll('#f_colors .lh-counter');
+  Array.prototype.forEach.call(colorCards, function(card, idx){
+    var base = COLOR_BLOCK_START + idx*5;   // I, N, S, X, AC, AH, AM
+    // nama warna (base) TIDAK dikirim -- sudah otomatis terisi via rumus VLOOKUP ke sheet Warna
+    values[base+1] = parseFloat(card.querySelector('.c-awal').value)||0;
+    values[base+2] = parseFloat(card.querySelector('.c-ambil').value)||0;
+    values[base+3] = parseFloat(card.querySelector('.c-akhir').value)||0;
+    // base+4 = PAKAI, rumus otomatis, tidak dikirim
+  });
+  var mCard = document.querySelector('#f_methanol .lh-counter');
+  values[METHANOL_AWAL_COL] = parseFloat(mCard.querySelector('.c-awal').value)||0;
+  values[METHANOL_AWAL_COL+1] = parseFloat(mCard.querySelector('.c-ambil').value)||0;
+  values[METHANOL_AWAL_COL+2] = parseFloat(mCard.querySelector('.c-akhir').value)||0;
+  values[KETERANGAN_COL] = document.getElementById('f_ket').value||'';
+  values[PELAPOR_COL] = document.getElementById('f_pelapor').value||'';
+
+  toast('Mengirim...');
+  var ok = await sendToSheet(tab, values);
+  if(ok){
+    var entry = {tanggal:tanggal, shift:draftShift[tab], produk:produk, tipe:tipe,
+      hasil:values[5], keterangan:values[KETERANGAN_COL], pelapor:values[PELAPOR_COL]};
+    cache[tab] = (cache[tab]||[]);
+    cache[tab].unshift(entry);
+    cache[tab] = cache[tab].slice(0,25);
+    toast('Laporan '+META[tab].label+' terkirim ke Google Sheet.');
+    renderTabs();
+    renderLog(tab);
+    document.getElementById('f_hasil').value='';
+    document.getElementById('f_rpolos').value='';
+    document.getElementById('f_rprint').value='';
+    document.getElementById('f_jumlah_display').textContent='0';
+    document.getElementById('f_ket').value='';
+    Array.prototype.forEach.call(document.querySelectorAll('#f_colors input, #f_methanol input'), function(i){ i.value=0; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-pakai]'), function(p){ p.textContent='PAKAI 0'; p.setAttribute('data-pakai','0'); });
+  }
+}
+
+function renderLog(tab){
+  var list = document.getElementById('logList');
+  if(!list) return;
+  var entries = cache[tab]||[];
+  if(!entries.length){ list.innerHTML = '<div class="lh-log-empty">Belum ada laporan dikirim di sesi ini.</div>'; return; }
+  list.innerHTML = entries.map(function(e){
+    return '<div class="lh-entry">'+
+      '<div class="meta">'+esc(e.tanggal)+' &middot; SHIFT '+esc(e.shift)+' &middot; '+esc(e.pelapor||'-')+'</div>'+
+      '<div class="main">'+esc(e.produk)+' — '+esc(e.tipe)+' &middot; Hasil '+esc(e.hasil)+' pcs</div>'+
+      '<div class="sub">'+esc(e.keterangan||'—')+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ---------- SPAREPART ---------- */
+function renderSparepartPanel(){
+  var m = META.SPAREPART;
+  var body = document.getElementById('lhBody');
+  body.style.setProperty('--accent', m.color);
+  var datalistOpts = SPAREPARTS.map(function(row){ return '<option value="'+esc(row[0]+' '+row[1])+'">'; }).join('');
+
+  body.innerHTML =
+    '<div class="lh-section-title">Laporan Keluar-Masuk Sparepart</div>'+
+    '<div class="lh-grid g2" style="margin-top:6px">'+
+      '<div class="lh-field"><label>Tanggal</label><input type="date" id="s_tanggal" value="'+todayStr()+'"></div>'+
+      '<div class="lh-field"><label>Nama Pelapor</label><input type="text" id="s_pelapor" placeholder="Nama operator/gudang"></div>'+
+    '</div>'+
+    '<div class="lh-grid g2" style="margin-top:10px">'+
+      '<div class="lh-field"><label>Cari Item + Tipe</label><input type="text" id="s_pick" list="sp_list" placeholder="mis. BEARING 6203"><datalist id="sp_list">'+datalistOpts+'</datalist></div>'+
+      '<div class="lh-field"><label>Fungsi (otomatis)</label><input type="text" id="s_fungsi" readonly></div>'+
+    '</div>'+
+    '<div class="lh-grid g2" style="margin-top:10px">'+
+      '<div class="lh-field"><label>Masuk (qty)</label><input type="number" id="s_masuk" min="0" value="0"></div>'+
+      '<div class="lh-field"><label>Keluar (qty)</label><input type="number" id="s_keluar" min="0" value="0"></div>'+
+    '</div>'+
+    '<div class="lh-section-title">Keterangan</div>'+
+    '<div class="lh-field"><textarea id="s_ket" placeholder="Untuk perbaikan apa, mesin mana, dll."></textarea></div>'+
+    '<button class="lh-btn lh-btn-primary" id="btnSaveSp">Simpan Laporan</button>'+
+    '<div class="lh-log"><div class="lh-section-title">Laporan Terakhir Dikirim (sesi ini)</div><div id="logList"></div></div>';
+
+  document.getElementById('s_pick').addEventListener('input', function(){
+    var val = this.value.trim();
+    var match = SPAREPARTS.find(function(row){ return (row[0]+' '+row[1]).toLowerCase()===val.toLowerCase(); });
+    document.getElementById('s_fungsi').value = match ? (match[2]||'—') : '';
+  });
+  document.getElementById('btnSaveSp').addEventListener('click', saveSparepartEntry);
+  renderSparepartLog();
+}
+
+async function saveSparepartEntry(){
+  var tanggal = document.getElementById('s_tanggal').value;
+  var val = document.getElementById('s_pick').value.trim();
+  var match = SPAREPARTS.find(function(row){ return (row[0]+' '+row[1]).toLowerCase()===val.toLowerCase(); });
+  var item, tipe;
+  if(match){ item=match[0]; tipe=match[1]; }
+  else { var parts = val.split(' '); item=parts[0]||''; tipe=parts.slice(1).join(' '); }
+  var masuk = parseFloat(document.getElementById('s_masuk').value)||0;
+  var keluar = parseFloat(document.getElementById('s_keluar').value)||0;
+  var ket = document.getElementById('s_ket').value||'';
+  var pelapor = document.getElementById('s_pelapor').value||'';
+  if(!tanggal || !item){ toast('Lengkapi tanggal dan item dulu.'); return; }
+  if(masuk===0 && keluar===0){ toast('Isi jumlah Masuk atau Keluar.'); return; }
+
+  // INSP columns: 1 CODE(formula,skip) 2 TANGGAL 3 ITEM 4 TIPE 5 MASUK 6 KELUAR 7 KETERANGAN 8 PELAPOR
+  var values = {2:tanggal, 3:item, 4:tipe, 5:masuk||'', 6:keluar||'', 7:ket, 8:pelapor};
+  toast('Mengirim...');
+  var ok = await sendToSheet('INSP', values);
+  if(ok){
+    cache.SPAREPART = (cache.SPAREPART||[]);
+    cache.SPAREPART.unshift({tanggal:tanggal, item:item, tipe:tipe, masuk:masuk, keluar:keluar, keterangan:ket});
+    cache.SPAREPART = cache.SPAREPART.slice(0,25);
+    toast('Laporan sparepart terkirim ke Google Sheet.');
+    renderSparepartLog();
+    document.getElementById('s_masuk').value=0;
+    document.getElementById('s_keluar').value=0;
+    document.getElementById('s_ket').value='';
+    document.getElementById('s_pick').value='';
+    document.getElementById('s_fungsi').value='';
+  }
+}
+
+function renderSparepartLog(){
+  var list = document.getElementById('logList');
+  if(!list) return;
+  var entries = cache.SPAREPART||[];
+  if(!entries.length){ list.innerHTML = '<div class="lh-log-empty">Belum ada laporan dikirim di sesi ini.</div>'; return; }
+  list.innerHTML = entries.map(function(e){
+    var dir = e.masuk>0 ? ('+'+e.masuk+' masuk') : '';
+    var dir2 = e.keluar>0 ? ('-'+e.keluar+' keluar') : '';
+    return '<div class="lh-entry">'+
+      '<div class="meta">'+esc(e.tanggal)+'</div>'+
+      '<div class="main">'+esc(e.item)+' '+esc(e.tipe)+' &middot; '+[dir,dir2].filter(Boolean).join(' / ')+'</div>'+
+      '<div class="sub">'+esc(e.keterangan||'—')+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function init(){
+  checkSetup();
+  renderTabs();
+  renderMachinePanel('INP1');
+}
+init();
+
+})();
+</script>
