@@ -56,6 +56,11 @@
 .lh-counter-row input{font-family:'JetBrains Mono',monospace; text-align:center; font-weight:600;}
 .lh-btn{border:none; border-radius:9px; padding:12px 18px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;}
 .lh-btn-primary{background:var(--accent); color:#14171c; width:100%; padding:14px; font-size:14.5px; margin-top:18px;}
+.lh-btn-connect{background:var(--accent, #5b96c9); color:#0d1117; width:100%;}
+.lh-btn-connect:disabled{opacity:.6;}
+#connectStatus.status-ok{color:#9adfb3;}
+#connectStatus.status-err{color:#e0616f;}
+#connectStatus.status-warn{color:#e0b34c;}
 .lh-btn:disabled{opacity:.5; cursor:default;}
 .lh-log{margin-top:26px;}
 .lh-log-empty{color:var(--muted2); font-size:13px; padding:18px 0; text-align:center;}
@@ -75,13 +80,21 @@ datalist{display:none;}
     <p>Versi master &middot; 1 link form untuk semua bulan &middot; tinggal ganti ID spreadsheet tiap bulan &middot; warna tinta otomatis</p>
   </div>
   <div class="lh-setup" id="lhSetup" style="display:none">
-    ⚠️ Perlu diisi sebelum mulai (lihat AppsScript_Code_MASTER.gs untuk cara deploy):
+    ⚠️ Perlu dihubungkan sebelum mulai (lihat AppsScript_Code_MASTER.gs untuk cara deploy):
     <input type="text" id="scriptUrlInput" placeholder="URL Web App Apps Script (permanen, sekali isi) — https://script.google.com/macros/s/xxxxx/exec">
     <input type="text" id="sheetIdInput" placeholder="Link atau ID Spreadsheet BULAN INI — ganti tiap bulan" style="margin-top:8px">
+    <button type="button" class="lh-btn lh-btn-connect" id="btnConnect" style="margin-top:10px">Hubungkan</button>
+    <div id="connectStatus" style="margin-top:8px; font-size:12px; display:none"></div>
   </div>
   <div class="lh-setup" id="lhSetupOk" style="display:none; background:#14241a; border-color:#2f5c3f; color:#9adfb3">
-    ✅ Terhubung ke spreadsheet: <span id="activeSheetLabel" style="font-family:'JetBrains Mono',monospace"></span>
-    &nbsp;<a href="#" id="changeSheetLink" style="color:#9adfb3; text-decoration:underline">ganti</a>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+      <div>
+        <span style="font-size:15px">✅</span> Terhubung ke spreadsheet
+        <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14.5px; color:#eafff0; margin-top:2px" id="activeSheetName">-</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#7ec99a; margin-top:2px" id="activeSheetId"></div>
+      </div>
+      <a href="#" id="changeSheetLink" style="color:#9adfb3; text-decoration:underline; font-size:12px; white-space:nowrap">ganti koneksi</a>
+    </div>
   </div>
   <div class="lh-tabs" id="lhTabs"></div>
   <div class="lh-body" id="lhBody"><div style="padding:40px 0;text-align:center;color:var(--muted)">Memuat…</div></div>
@@ -187,12 +200,60 @@ function toast(msg){
   clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show');},2500);
 }
 
+function setStatus(msg, kind){
+  var el = document.getElementById('connectStatus');
+  el.textContent = msg;
+  el.className = kind ? ('status-'+kind) : '';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function verifyConnection(scriptUrl, sheetId){
+  var verifyUrl = scriptUrl + (scriptUrl.indexOf('?')>-1 ? '&' : '?') + 'action=verify&spreadsheetId=' + encodeURIComponent(sheetId);
+  var res = await fetch(verifyUrl, {method:'GET'});
+  var data = await res.json();
+  return data;
+}
+
+async function attemptConnect(){
+  var scriptInput = document.getElementById('scriptUrlInput');
+  var sheetInput = document.getElementById('sheetIdInput');
+  var btn = document.getElementById('btnConnect');
+  var url = scriptInput.value.trim();
+  var sheetId = extractSheetId(sheetInput.value);
+
+  if(!url || url.indexOf('PASTE_') === 0){ setStatus('Isi dulu URL Web App Apps Script.', 'err'); return; }
+  if(!sheetId){ setStatus('Isi dulu link atau ID spreadsheet.', 'err'); return; }
+
+  btn.disabled = true;
+  setStatus('Menghubungkan...', 'warn');
+  SCRIPT_URL = url;
+  SPREADSHEET_ID = sheetId;
+
+  try{
+    var data = await verifyConnection(url, sheetId);
+    if(data && data.ok){
+      setStatus('', null);
+      showConnectedBadge(data.name);
+      toast('Terhubung ke "'+data.name+'".');
+    } else {
+      setStatus('Gagal terhubung: ' + (data && data.error ? data.error : 'ID atau URL tidak valid.'), 'err');
+    }
+  }catch(e){
+    // kemungkinan dibatasi CORS oleh browser -- tetap simpan koneksi tapi tanpa nama terverifikasi
+    setStatus('Tidak bisa memverifikasi nama file (kemungkinan dibatasi browser), tapi koneksi tetap disimpan.', 'warn');
+    showConnectedBadge(null);
+  }
+  btn.disabled = false;
+}
+
 function checkSetup(){
   var urlSheet = getUrlParam('sheet');
   if(urlSheet){ SPREADSHEET_ID = extractSheetId(urlSheet); }
 
   var needsScript = !SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0;
   var needsSheet = !SPREADSHEET_ID;
+
+  document.getElementById('btnConnect').addEventListener('click', attemptConnect);
 
   if(needsScript || needsSheet){
     document.getElementById('lhSetup').style.display = 'block';
@@ -201,33 +262,27 @@ function checkSetup(){
     var sheetInput = document.getElementById('sheetIdInput');
     if(!needsScript) scriptInput.value = SCRIPT_URL;
     if(!needsSheet) sheetInput.value = SPREADSHEET_ID;
-    scriptInput.addEventListener('change', function(){
-      SCRIPT_URL = scriptInput.value.trim();
-      if(SCRIPT_URL) toast('URL Apps Script disimpan untuk sesi ini.');
-    });
-    sheetInput.addEventListener('change', function(){
-      SPREADSHEET_ID = extractSheetId(sheetInput.value);
-      if(SPREADSHEET_ID){
-        toast('Spreadsheet bulan ini disimpan untuk sesi ini.');
-        showConnectedBadge();
-      }
-    });
     return false;
   }
-  showConnectedBadge();
+  // sudah ada konfigurasi (mis. dari ?sheet= di URL) -- coba verifikasi otomatis
+  document.getElementById('scriptUrlInput').value = SCRIPT_URL;
+  document.getElementById('sheetIdInput').value = SPREADSHEET_ID;
+  attemptConnect();
   return true;
 }
 
-function showConnectedBadge(){
+function showConnectedBadge(name){
   if(!SPREADSHEET_ID) return;
   document.getElementById('lhSetup').style.display = 'none';
   document.getElementById('lhSetupOk').style.display = 'block';
-  document.getElementById('activeSheetLabel').textContent = SPREADSHEET_ID;
+  document.getElementById('activeSheetName').textContent = name || '(nama tidak terverifikasi)';
+  document.getElementById('activeSheetId').textContent = SPREADSHEET_ID;
   document.getElementById('changeSheetLink').onclick = function(ev){
     ev.preventDefault();
     document.getElementById('lhSetup').style.display = 'block';
     document.getElementById('lhSetupOk').style.display = 'none';
     document.getElementById('sheetIdInput').value = SPREADSHEET_ID;
+    setStatus('', null);
   };
 }
 
