@@ -138,7 +138,7 @@ datalist{display:none;}
 
 // ================== KONFIGURASI ==================
 // 1) URL Web App Apps Script MASTER Anda -- isi SEKALI, berlaku selamanya untuk semua bulan.
-var SCRIPT_URL = "PASTE_APPS_SCRIPT_WEB_APP_URL_DI_SINI";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdnrvde_N5Thg34E3c8_OFu0fe11ebc27W5TVyRaXmFOVdCpL81LGrgSPhRqBpwEI_3A/exec";
 // 2) ID spreadsheet bulan ini -- default di bawah bisa dikosongkan/diganti tiap bulan
 //    lewat kotak di form, atau dengan membuka file ini dengan ?sheet=ID_SPREADSHEET di URL.
 var SPREADSHEET_ID = "1wRsLrSrdx0_CDZxR_s0uVHQXfG7KXuKm7KXhocVxwhU";
@@ -227,6 +227,11 @@ var draftShift = {INP1:1,INP2:1,INP3:1,INP4:1};
 
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function esc(s){ return (s===undefined||s===null)?'':String(s).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+var MONTHS_ID = ['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
+function fmtID(n, decimals){
+  if(!isFinite(n)) n = 0;
+  return n.toLocaleString('id-ID', {minimumFractionDigits: decimals||0, maximumFractionDigits: decimals||2});
+}
 function toast(msg){
   var t=document.getElementById('lhToast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show');},2500);
@@ -389,23 +394,35 @@ function renderMachinePanel(tab){
     '</div>'+
     '<div class="lh-grid g2" style="margin-top:10px">'+
       '<div class="lh-field"><label>Tipe</label><select id="f_tipe"></select></div>'+
-      '<div class="lh-field"><label>Nama Pelapor</label><input type="text" id="f_pelapor" placeholder="Nama operator"></div>'+
+      '<div class="lh-field"><label>Nama Operator (pisah koma jika &gt;1)</label><input type="text" id="f_pelapor" placeholder="mis. Anam, Dimas"></div>'+
     '</div>'+
+    '<div class="lh-section-title">Standar Packing</div>'+
+    '<div class="lh-grid g2">'+
+      '<div class="lh-field"><label>Jumlah Cup per Box (pcs)</label><input type="number" id="f_cupsbox" min="0" placeholder="mis. 2000"></div>'+
+      '<div class="lh-field"><label>Standar Berat Cup (gr)</label><input type="number" id="f_cupweight" min="0" step="0.01" placeholder="mis. 2"></div>'+
+    '</div>'+
+    '<div class="lh-note">Standar Berat Cup dipakai untuk mengubah berat reject (kg) yang Anda input di bawah menjadi jumlah pcs otomatis sebelum dikirim ke spreadsheet.</div>'+
+
     '<div class="lh-section-title">Hasil Produksi</div>'+
     '<div class="lh-grid">'+
       '<div class="lh-field"><label>Hasil (pcs)</label><input type="number" id="f_hasil" min="0"></div>'+
-      '<div class="lh-field"><label>Reject Polos</label><input type="number" id="f_rpolos" min="0"></div>'+
-      '<div class="lh-field"><label>Reject Print</label><input type="number" id="f_rprint" min="0"></div>'+
+      '<div class="lh-field"><label>Reject Polos (kg)</label><input type="number" id="f_rpolos" min="0" step="0.01"><div class="lh-note" style="margin-top:4px">≈ <span id="f_rpolos_pcs">0</span> pcs</div></div>'+
+      '<div class="lh-field"><label>Reject Print (kg)</label><input type="number" id="f_rprint" min="0" step="0.01"><div class="lh-note" style="margin-top:4px">≈ <span id="f_rprint_pcs">0</span> pcs</div></div>'+
     '</div>'+
-    '<div class="lh-counter" style="margin-top:10px"><div class="lh-counter-head"><div class="name">JUMLAH (Hasil + Reject Polos + Reject Print)</div><div class="pakai" id="f_jumlah_display">0</div></div></div>'+
+    '<div class="lh-counter" style="margin-top:10px"><div class="lh-counter-head"><div class="name">JUMLAH (Hasil + Reject Polos + Reject Print, dalam pcs)</div><div class="pakai" id="f_jumlah_display">0</div></div></div>'+
     '<div class="lh-section-title">Pemakaian Tinta (Drum)</div>'+
     '<div id="f_colors"></div>'+
     '<div class="lh-section-title">Pemakaian Methanol</div>'+
     '<div id="f_methanol"></div>'+
     '<div class="lh-section-title">Keterangan</div>'+
-    '<div class="lh-field"><textarea id="f_ket" placeholder="Catatan gangguan, setting, perbaikan, dll."></textarea></div>'+
+    '<div class="lh-field"><textarea id="f_ket" placeholder="Catatan gangguan, setting, perbaikan, dll. (satu baris = satu poin)"></textarea></div>'+
     '<button class="lh-btn lh-btn-primary" id="btnSave">Simpan Laporan</button>'+
     '<div class="lh-note">Ada 2 produk dalam shift yang sama? Simpan laporan produk pertama, lalu ulangi form dengan tanggal &amp; shift yang sama untuk produk kedua — keduanya masuk sebagai baris terpisah.</div>'+
+
+    '<div class="lh-section-title">Teks Laporan (Salin ke WhatsApp)</div>'+
+    '<div class="lh-field"><textarea id="waText" readonly style="min-height:220px; font-family:\'JetBrains Mono\',monospace; font-size:12.5px; white-space:pre; line-height:1.5;"></textarea></div>'+
+    '<button class="lh-btn lh-btn-connect" id="btnCopyWa" type="button" style="margin-top:8px">Salin Teks</button>'+
+
     '<div class="lh-log"><div class="lh-section-title">Laporan Terakhir Dikirim (sesi ini)</div><div id="logList"></div></div>';
 
   Array.prototype.forEach.call(document.getElementById('f_shift').querySelectorAll('button'), function(b){
@@ -413,11 +430,12 @@ function renderMachinePanel(tab){
       draftShift[tab] = parseInt(b.getAttribute('data-shift'),10);
       Array.prototype.forEach.call(document.getElementById('f_shift').querySelectorAll('button'), function(x){x.classList.remove('active');});
       b.classList.add('active');
+      if(typeof buildWaText === 'function') buildWaText();
     });
   });
 
   var produkSel = document.getElementById('f_produk');
-  produkSel.addEventListener('change', updateTipeAndColors);
+  produkSel.addEventListener('change', function(){ updateTipeAndColors(); if(typeof buildWaText === 'function') buildWaText(); });
   function updateTipeAndColors(){
     var info = PRODUCTS[produkSel.value] || {types:[],colors:[]};
     document.getElementById('f_tipe').innerHTML = info.types.map(function(t){return '<option value="'+esc(t)+'">'+esc(t)+'</option>';}).join('');
@@ -456,14 +474,89 @@ function renderMachinePanel(tab){
   }
   updateTipeAndColors();
 
+  function kgToPcs(kg){
+    var cupWeight = parseFloat(document.getElementById('f_cupweight').value)||0;
+    return cupWeight > 0 ? (kg * 1000 / cupWeight) : 0;
+  }
+
   function recalcJumlah(){
     var h = parseFloat(document.getElementById('f_hasil').value)||0;
-    var rp = parseFloat(document.getElementById('f_rpolos').value)||0;
-    var rpr = parseFloat(document.getElementById('f_rprint').value)||0;
-    document.getElementById('f_jumlah_display').textContent = (h+rp+rpr);
+    var rpKg = parseFloat(document.getElementById('f_rpolos').value)||0;
+    var rprKg = parseFloat(document.getElementById('f_rprint').value)||0;
+    var rpPcs = kgToPcs(rpKg);
+    var rprPcs = kgToPcs(rprKg);
+    document.getElementById('f_rpolos_pcs').textContent = fmtID(rpPcs, 0);
+    document.getElementById('f_rprint_pcs').textContent = fmtID(rprPcs, 0);
+    document.getElementById('f_jumlah_display').textContent = fmtID(h + rpPcs + rprPcs, 0);
   }
-  ['f_hasil','f_rpolos','f_rprint'].forEach(function(id){
+  ['f_hasil','f_rpolos','f_rprint','f_cupweight'].forEach(function(id){
     document.getElementById(id).addEventListener('input', recalcJumlah);
+  });
+  recalcJumlah();
+
+  function buildWaText(){
+    var tanggal = document.getElementById('f_tanggal').value;
+    var produk = produkSel.value || '';
+    var tipe = document.getElementById('f_tipe').value || '';
+    var hasil = parseFloat(document.getElementById('f_hasil').value)||0;
+    var rpolosKg = parseFloat(document.getElementById('f_rpolos').value)||0;
+    var rprintKg = parseFloat(document.getElementById('f_rprint').value)||0;
+    var cupsPerBox = parseFloat(document.getElementById('f_cupsbox').value)||0;
+    var rpolosPcs = kgToPcs(rpolosKg);
+    var rprintPcs = kgToPcs(rprintKg);
+    var pelaporRaw = document.getElementById('f_pelapor').value || '';
+    var ketRaw = document.getElementById('f_ket').value || '';
+
+    var total = hasil + rpolosPcs + rprintPcs;
+    var hasilBox = cupsPerBox > 0 ? Math.round(hasil / cupsPerBox) : 0;
+    var tipeDisplay = /^\d+$/.test(tipe) ? (tipe + ' ML') : tipe;
+
+    var dateStr = '-';
+    if(tanggal){
+      var dp = tanggal.split('-');
+      dateStr = parseInt(dp[2],10) + ' ' + MONTHS_ID[parseInt(dp[1],10)-1] + ' ' + dp[0];
+    }
+
+    var ketLines = ketRaw.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    if(!ketLines.length) ketLines = ['-'];
+    var nameLines = pelaporRaw.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(!nameLines.length) nameLines = ['-'];
+
+    var lines = [];
+    lines.push('Laporan printing');
+    lines.push('tanggal ' + dateStr + ' Shift ' + draftShift[tab]);
+    lines.push('( ' + m.label + ' )');
+    lines.push((produk + ' ' + tipeDisplay).trim());
+    lines.push('Hasil       :  ' + fmtID(hasil,0) + 'pcs ( ' + fmtID(hasilBox,0) + ' box )');
+    lines.push('R.cup      :  ' + fmtID(rpolosPcs,0) + ' pcs     (' + fmtID(rpolosKg,1) + 'kg)');
+    lines.push('R.print      :  ' + fmtID(rprintPcs,0) + ' pcs      ( ' + fmtID(rprintKg,1) + 'kg)');
+    lines.push('Total bahan : ' + fmtID(total,0) + ' pcs');
+    lines.push('');
+    lines.push('Ket');
+    ketLines.forEach(function(l){ lines.push('- ' + l); });
+    lines.push('');
+    lines.push('OPERATOR');
+    nameLines.forEach(function(n){ lines.push('- ' + n); });
+
+    document.getElementById('waText').value = lines.join('\n');
+  }
+
+  body.addEventListener('input', buildWaText);
+  body.addEventListener('change', buildWaText);
+  buildWaText();
+
+  document.getElementById('btnCopyWa').addEventListener('click', function(){
+    var ta = document.getElementById('waText');
+    ta.select();
+    ta.setSelectionRange(0, 999999);
+    var copied = false;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(function(){ toast('Teks laporan disalin.'); }).catch(function(){
+        try{ document.execCommand('copy'); toast('Teks laporan disalin.'); }catch(e){ toast('Gagal menyalin, salin manual dari kotak teks.'); }
+      });
+    } else {
+      try{ document.execCommand('copy'); toast('Teks laporan disalin.'); }catch(e){ toast('Gagal menyalin, salin manual dari kotak teks.'); }
+    }
   });
 
   document.getElementById('btnSave').addEventListener('click', function(){ saveMachineEntry(tab); });
@@ -476,14 +569,24 @@ async function saveMachineEntry(tab){
   var tipe = document.getElementById('f_tipe').value;
   if(!tanggal || !produk || !tipe){ toast('Lengkapi tanggal, produk, dan tipe dulu.'); return; }
 
+  var cupWeight = parseFloat(document.getElementById('f_cupweight').value)||0;
+  var rpolosKg = parseFloat(document.getElementById('f_rpolos').value)||0;
+  var rprintKg = parseFloat(document.getElementById('f_rprint').value)||0;
+  if((rpolosKg > 0 || rprintKg > 0) && cupWeight <= 0){
+    toast('Isi dulu Standar Berat Cup (gr) supaya berat reject bisa dikonversi ke pcs.');
+    return;
+  }
+  var rpolosPcs = cupWeight > 0 ? (rpolosKg * 1000 / cupWeight) : 0;
+  var rprintPcs = cupWeight > 0 ? (rprintKg * 1000 / cupWeight) : 0;
+
   var values = {};
   values[1] = tanggal;
   values[2] = draftShift[tab];
   values[3] = produk;
   values[4] = tipe;
   values[5] = parseFloat(document.getElementById('f_hasil').value)||0;
-  values[6] = parseFloat(document.getElementById('f_rpolos').value)||0;
-  values[7] = parseFloat(document.getElementById('f_rprint').value)||0;
+  values[6] = Math.round(rpolosPcs);
+  values[7] = Math.round(rprintPcs);
 
   var colorCards = document.querySelectorAll('#f_colors .lh-counter');
   Array.prototype.forEach.call(colorCards, function(card, idx){
@@ -515,6 +618,8 @@ async function saveMachineEntry(tab){
     document.getElementById('f_hasil').value='';
     document.getElementById('f_rpolos').value='';
     document.getElementById('f_rprint').value='';
+    document.getElementById('f_rpolos_pcs').textContent='0';
+    document.getElementById('f_rprint_pcs').textContent='0';
     document.getElementById('f_jumlah_display').textContent='0';
     document.getElementById('f_ket').value='';
     Array.prototype.forEach.call(document.querySelectorAll('#f_colors input, #f_methanol input'), function(i){ i.value=0; });
