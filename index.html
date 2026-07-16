@@ -18,7 +18,7 @@
 
 .lh-app{
   --bg:#14171c; --surface:#1c2027; --surface2:#242933; --surface3:#2c3240;
-  --border:#333a48; --text:#eceef1; --muted:#8a93a6; --muted2:#5d6577;
+  --border:#3d4658; --text:#f5f6f8; --muted:#c3cbda; --muted2:#9aa2b5;
   --p1:#f2a93b; --p2:#3fa796; --p3:#9186e0; --p4:#e8607a; --sp:#5b96c9;
   --good:#4caf7d; --bad:#e0616f; --warn:#e0b34c;
   font-family:'Inter',sans-serif; color:var(--text); background:var(--bg);
@@ -70,6 +70,9 @@
   padding:10px 11px; border-radius:8px; font-size:14px; outline:none; min-height:44px;
 }
 .lh-field textarea{resize:vertical; min-height:56px;}
+.lh-field input::placeholder, .lh-field textarea::placeholder, .lh-setup input::placeholder{
+  color:#7c8497; opacity:1;
+}
 @media(max-width:640px){
   .lh-field input[type=text], .lh-field input[type=number], .lh-field input[type=date],
   .lh-field select, .lh-field textarea{ font-size:16px; }
@@ -363,7 +366,7 @@ function renderTabs(){
     var count = (cache[k]||[]).filter(function(e){return e.tanggal===todayStr();}).length;
     return '<div class="lh-tab'+(k===activeTab?' active':'')+'" data-tab="'+k+'" style="--accent:'+m.color+'">'+
       '<span class="dot"></span>'+m.short+
-      (count>0?' <span style="opacity:.6">('+count+')</span>':'')+
+      (count>0?' <span style="color:var(--accent); font-weight:700">('+count+')</span>':'')+
       '</div>';
   }).join('');
   Array.prototype.forEach.call(wrap.querySelectorAll('.lh-tab'), function(el){
