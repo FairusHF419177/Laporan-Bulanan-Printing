@@ -535,6 +535,32 @@ function renderMachinePanel(tab){
     lines.push('R.print      :  ' + fmtID(rprintPcs,0) + ' pcs      ( ' + fmtID(rprintKg,1) + 'kg)');
     lines.push('Total bahan : ' + fmtID(total,0) + ' pcs');
     lines.push('');
+
+    var colorCards = document.querySelectorAll('#f_colors .lh-counter');
+    if(colorCards.length){
+      lines.push('Tinta:');
+      Array.prototype.forEach.call(colorCards, function(card){
+        var code = card.getAttribute('data-color-code');
+        var name = card.getAttribute('data-color-name');
+        var awal = parseFloat(card.querySelector('.c-awal').value)||0;
+        var ambil = parseFloat(card.querySelector('.c-ambil').value)||0;
+        var akhir = parseFloat(card.querySelector('.c-akhir').value)||0;
+        var pakai = parseFloat(card.querySelector('[data-pakai]').getAttribute('data-pakai'))||0;
+        lines.push('- ' + code + ' (' + name + ') : Awal ' + fmtID(awal,0) + ', Ambil ' + fmtID(ambil,0) + ', Akhir ' + fmtID(akhir,0) + ' (Pakai ' + fmtID(pakai,0) + ')');
+      });
+      lines.push('');
+    }
+
+    var mCardWa = document.querySelector('#f_methanol .lh-counter');
+    if(mCardWa){
+      var mAwal = parseFloat(mCardWa.querySelector('.c-awal').value)||0;
+      var mAmbil = parseFloat(mCardWa.querySelector('.c-ambil').value)||0;
+      var mAkhir = parseFloat(mCardWa.querySelector('.c-akhir').value)||0;
+      var mPakai = parseFloat(mCardWa.querySelector('[data-pakai]').getAttribute('data-pakai'))||0;
+      lines.push('Methanol : Awal ' + fmtID(mAwal,0) + ', Ambil ' + fmtID(mAmbil,0) + ', Akhir ' + fmtID(mAkhir,0) + ' (Pakai ' + fmtID(mPakai,0) + ')');
+      lines.push('');
+    }
+
     lines.push('Ket');
     ketLines.forEach(function(l){ lines.push('- ' + l); });
     lines.push('');
