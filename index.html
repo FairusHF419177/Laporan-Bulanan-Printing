@@ -101,7 +101,7 @@
 .lh-log-empty{color:var(--muted2); font-size:13px; padding:18px 0; text-align:center;}
 .lh-entry{border:1px solid var(--border); background:var(--surface2); border-radius:10px; padding:12px 14px; margin-bottom:8px;}
 .lh-entry .meta{font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:3px;}
-.lh-entry .main{font-size:13.5px; font-weight:600;}
+.lh-entry .main覆{font-size:13.5px; font-weight:600;}
 .lh-entry .sub{font-size:12px; color:var(--muted); margin-top:3px;}
 .lh-toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#20252d; color:var(--text); border:1px solid var(--border); padding:10px 18px; border-radius:30px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.4); z-index:999; opacity:0; pointer-events:none; transition:opacity .25s;}
 .lh-toast.show{opacity:1;}
@@ -109,16 +109,25 @@
 datalist{display:none;}
 .lh-modal-overlay{position:fixed; inset:0; background:rgba(10,12,15,0.72); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px;}
 .lh-modal-overlay.show{display:flex;}
-.lh-modal-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; max-width:440px; width:100%; padding:22px; max-height:85vh; overflow-y:auto;}
-.lh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16.5px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
-.lh-modal-body{font-size:13.5px; line-height:1.85; color:var(--text);}
-.lh-modal-body .row{display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px solid var(--border);}
+
+/* ==================== PERUBAHAN POPUP DI SINI ==================== */
+.lh-modal-card{
+  background:#ffffff; /* Diubah ke putih */
+  color:#14171c;      /* Teks utama diubah menjadi gelap agar terbaca */
+  border:1px solid #d1d5db; 
+  border-radius:14px; max-width:440px; width:100%; padding:22px; max-height:85vh; overflow-y:auto;
+}
+.lh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16.5px; margin-bottom:14px; display:flex; align-items:center; gap:8px; color:#14171c;}
+.lh-modal-body{font-size:13.5px; line-height:1.85; color:#14171c;}
+.lh-modal-body .row{display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px solid #e5e7eb;}
 .lh-modal-body .row:last-child{border-bottom:none;}
-.lh-modal-body .row .k{color:var(--muted); flex:0 0 auto;}
-.lh-modal-body .row .v{font-weight:600; text-align:right;}
+.lh-modal-body .row .k{color:#4b5563; flex:0 0 auto;} /* Warna label abu-abu gelap */
+.lh-modal-body .row .v{font-weight:600; text-align:right; color:#14171c;}
+/* ================================================================= */
+
 .lh-modal-actions{display:flex; gap:10px; margin-top:18px;}
 .lh-modal-actions .lh-btn{flex:1; margin-top:0;}
-.lh-modal-actions .lh-btn-ghost{background:var(--surface2); color:var(--text); border:1px solid var(--border);}
+.lh-modal-actions .lh-btn-ghost{background:#f3f4f6; color:#14171c; border:1px solid #d1d5db;}
 </style>
 
 <div class="lh-modal-overlay" id="lhModalOverlay">
@@ -236,13 +245,7 @@ var SPAREPARTS = [
 ["VBELT","S14M-1540-70","GEARBOX UTAMA P1"]
 ];
 
-// Kolom target di sheet (1-based), sesuai layout laporan_bulanan_v3.xlsx
-// A TANGGAL(1) B SHIFT(2) C PRODUK(3) D TIPE(4) E HASIL(5) F R.POLOS(6) G R.PRINT(7) H JUMLAH[formula]
-// I C1(9) J C1.AWAL(10) K C1.AMBIL(11) L C1.AKHIR(12) M C1.PAKAI[formula]
-// ... pola sama tiap 5 kolom untuk C2..C7
-// AR M AWAL(44) AS M AMBIL(45) AT M AKHIR(46) AU M PAKAI[formula]
-// AV KETERANGAN(48) AW PELAPOR(49)
-var COLOR_BLOCK_START = 9; // I
+var COLOR_BLOCK_START = 9;
 var METHANOL_AWAL_COL = 44;
 var KETERANGAN_COL = 48;
 var PELAPOR_COL = 49;
@@ -267,7 +270,7 @@ function initConfirmModal(){
   document.getElementById('lhModalCancel').addEventListener('click', closeConfirmModal);
   document.getElementById('lhModalConfirm').addEventListener('click', async function(){
     var btn = this;
-    if(btn.disabled) return; // cegah klik dobel saat sedang mengirim
+    if(btn.disabled) return;
     if(!pendingConfirmAction) return;
     btn.disabled = true;
     var originalText = btn.textContent;
@@ -331,7 +334,6 @@ async function attemptConnect(){
       setStatus('Gagal terhubung: ' + (data && data.error ? data.error : 'ID atau URL tidak valid.'), 'err');
     }
   }catch(e){
-    // kemungkinan dibatasi CORS oleh browser -- tetap simpan koneksi tapi tanpa nama terverifikasi
     setStatus('Tidak bisa memverifikasi nama file (kemungkinan dibatasi browser), tapi koneksi tetap disimpan.', 'warn');
     showConnectedBadge(null);
   }
@@ -356,7 +358,6 @@ function checkSetup(){
     if(!needsSheet) sheetInput.value = SPREADSHEET_ID;
     return false;
   }
-  // sudah ada konfigurasi (mis. dari ?sheet= di URL) -- coba verifikasi otomatis
   document.getElementById('scriptUrlInput').value = SCRIPT_URL;
   document.getElementById('sheetIdInput').value = SPREADSHEET_ID;
   attemptConnect();
@@ -402,7 +403,6 @@ async function sendToSheet(sheetName, values){
       headers: {'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({ spreadsheetId: SPREADSHEET_ID, sheet: sheetName, values: values })
     });
-    // mode no-cors -> respons tidak bisa dibaca, kita anggap terkirim
     return true;
   }catch(e){
     toast('Gagal mengirim (cek koneksi internet).');
@@ -456,7 +456,7 @@ function renderMachinePanel(tab){
       '<div class="lh-field"><label>Jumlah Cup per Box (pcs) <span style="color:var(--bad)">*wajib</span></label><input type="number" id="f_cupsbox" min="0" placeholder="mis. 2000"></div>'+
       '<div class="lh-field"><label>Standar Berat Cup (gr) <span style="color:var(--bad)">*wajib</span></label><input type="number" id="f_cupweight" min="0" step="0.01" placeholder="mis. 2"></div>'+
     '</div>'+
-    '<div class="lh-note">Standar Berat Cup dipakai untuk mengubah berat reject (kg) yang Anda input di bawah menjadi jumlah pcs otomatis sebelum dikirim ke spreadsheet.</div>'+
+    '<div class="lh-note">Standar Berat Cup dipakai untuk mengubah berat reject (kg) yang Anda input di bawah menjadi jumlah pcs otomatis sebelum dikirim to spreadsheet.</div>'+
 
     '<div class="lh-section-title">Hasil Produksi</div>'+
     '<div class="lh-grid">'+
@@ -635,7 +635,6 @@ function renderMachinePanel(tab){
     var ta = document.getElementById('waText');
     ta.select();
     ta.setSelectionRange(0, 999999);
-    var copied = false;
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(ta.value).then(function(){ toast('Teks laporan disalin.'); }).catch(function(){
         try{ document.execCommand('copy'); toast('Teks laporan disalin.'); }catch(e){ toast('Gagal menyalin, salin manual dari kotak teks.'); }
@@ -684,12 +683,10 @@ function confirmAndSaveMachineEntry(tab){
 
   var colorCards = document.querySelectorAll('#f_colors .lh-counter');
   Array.prototype.forEach.call(colorCards, function(card, idx){
-    var base = COLOR_BLOCK_START + idx*5;   // I, N, S, X, AC, AH, AM
-    // nama warna (base) TIDAK dikirim -- sudah otomatis terisi via rumus VLOOKUP ke sheet Warna
+    var base = COLOR_BLOCK_START + idx*5;
     values[base+1] = parseFloat(card.querySelector('.c-awal').value)||0;
     values[base+2] = parseFloat(card.querySelector('.c-ambil').value)||0;
     values[base+3] = parseFloat(card.querySelector('.c-akhir').value)||0;
-    // base+4 = PAKAI, rumus otomatis, tidak dikirim
   });
   var mCard = document.querySelector('#f_methanol .lh-counter');
   values[METHANOL_AWAL_COL] = parseFloat(mCard.querySelector('.c-awal').value)||0;
@@ -754,7 +751,6 @@ function renderLog(tab){
   }).join('');
 }
 
-/* ---------- SPAREPART ---------- */
 function renderSparepartPanel(){
   var m = META.SPAREPART;
   var body = document.getElementById('lhBody');
@@ -803,7 +799,6 @@ function confirmAndSaveSparepartEntry(){
   if(!tanggal || !item){ toast('Lengkapi tanggal dan item dulu.'); return; }
   if(masuk===0 && keluar===0){ toast('Isi jumlah Masuk atau Keluar.'); return; }
 
-  // INSP columns: 1 CODE(formula,skip) 2 TANGGAL 3 ITEM 4 TIPE 5 MASUK 6 KELUAR 7 KETERANGAN 8 PELAPOR
   var values = {2:tanggal, 3:item, 4:tipe, 5:masuk||'', 6:keluar||'', 7:ket, 8:pelapor};
   var meta = {tanggal:tanggal, item:item, tipe:tipe, masuk:masuk, keluar:keluar, keterangan:ket};
 
