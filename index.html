@@ -101,33 +101,29 @@
 .lh-log-empty{color:var(--muted2); font-size:13px; padding:18px 0; text-align:center;}
 .lh-entry{border:1px solid var(--border); background:var(--surface2); border-radius:10px; padding:12px 14px; margin-bottom:8px;}
 .lh-entry .meta{font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:3px;}
-.lh-entry .main覆{font-size:13.5px; font-weight:600;}
+.lh-entry .main{font-size:13.5px; font-weight:600;}
 .lh-entry .sub{font-size:12px; color:var(--muted); margin-top:3px;}
 .lh-toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#20252d; color:var(--text); border:1px solid var(--border); padding:10px 18px; border-radius:30px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.4); z-index:999; opacity:0; pointer-events:none; transition:opacity .25s;}
 .lh-toast.show{opacity:1;}
 .lh-note{font-size:11.5px; color:var(--muted2); margin-top:8px; line-height:1.5;}
 datalist{display:none;}
-.lh-modal-overlay{position:fixed; inset:0; background:rgba(10,12,15,0.72); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px;}
+.lh-modal-overlay{position:fixed; inset:0; background:rgba(6,7,9,0.85); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px;}
 .lh-modal-overlay.show{display:flex;}
-
-/* ==================== PERUBAHAN POPUP DI SINI ==================== */
 .lh-modal-card{
-  background:#ffffff; /* Diubah ke putih */
-  color:#14171c;      /* Teks utama diubah menjadi gelap agar terbaca */
-  border:1px solid #d1d5db; 
-  border-radius:14px; max-width:440px; width:100%; padding:22px; max-height:85vh; overflow-y:auto;
+  background:#ffffff; border:1px solid #d8dce3; border-top:4px solid var(--accent);
+  border-radius:14px; max-width:440px; width:100%; padding:24px; max-height:85vh; overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.02);
 }
-.lh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16.5px; margin-bottom:14px; display:flex; align-items:center; gap:8px; color:#14171c;}
-.lh-modal-body{font-size:13.5px; line-height:1.85; color:#14171c;}
-.lh-modal-body .row{display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px solid #e5e7eb;}
+.lh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; margin-bottom:16px; display:flex; align-items:center; gap:8px; color:#111111;}
+.lh-modal-body{font-size:14.5px; line-height:1.9; color:#111111;}
+.lh-modal-body .row{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:7px 0; border-bottom:1px solid #e5e7eb;}
 .lh-modal-body .row:last-child{border-bottom:none;}
-.lh-modal-body .row .k{color:#4b5563; flex:0 0 auto;} /* Warna label abu-abu gelap */
-.lh-modal-body .row .v{font-weight:600; text-align:right; color:#14171c;}
-/* ================================================================= */
-
-.lh-modal-actions{display:flex; gap:10px; margin-top:18px;}
-.lh-modal-actions .lh-btn{flex:1; margin-top:0;}
-.lh-modal-actions .lh-btn-ghost{background:#f3f4f6; color:#14171c; border:1px solid #d1d5db;}
+.lh-modal-body .row .k{color:#333333; flex:0 0 auto; font-size:12.5px; font-weight:600; text-transform:uppercase; letter-spacing:.3px;}
+.lh-modal-body .row .v{font-weight:700; text-align:right; color:#000000; font-size:14.5px;}
+.lh-modal-actions{display:flex; gap:10px; margin-top:20px;}
+.lh-modal-actions .lh-btn{flex:1; margin-top:0; min-height:48px; font-size:14px;}
+.lh-modal-actions .lh-btn-ghost{background:#e0393f; color:#ffffff; border:1px solid #c62d33; box-shadow:0 4px 14px rgba(224,57,63,0.3);}
+.lh-modal-actions .lh-btn-primary{background:#2fa84f; color:#ffffff; box-shadow:0 4px 14px rgba(47,168,79,0.35);}
 </style>
 
 <div class="lh-modal-overlay" id="lhModalOverlay">
@@ -245,7 +241,13 @@ var SPAREPARTS = [
 ["VBELT","S14M-1540-70","GEARBOX UTAMA P1"]
 ];
 
-var COLOR_BLOCK_START = 9;
+// Kolom target di sheet (1-based), sesuai layout laporan_bulanan_v3.xlsx
+// A TANGGAL(1) B SHIFT(2) C PRODUK(3) D TIPE(4) E HASIL(5) F R.POLOS(6) G R.PRINT(7) H JUMLAH[formula]
+// I C1(9) J C1.AWAL(10) K C1.AMBIL(11) L C1.AKHIR(12) M C1.PAKAI[formula]
+// ... pola sama tiap 5 kolom untuk C2..C7
+// AR M AWAL(44) AS M AMBIL(45) AT M AKHIR(46) AU M PAKAI[formula]
+// AV KETERANGAN(48) AW PELAPOR(49)
+var COLOR_BLOCK_START = 9; // I
 var METHANOL_AWAL_COL = 44;
 var KETERANGAN_COL = 48;
 var PELAPOR_COL = 49;
@@ -256,9 +258,39 @@ var draftShift = {INP1:1,INP2:1,INP3:1,INP4:1};
 
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
+function getAutoDateShift(){
+  // Hitung waktu WIB (UTC+7) secara independen dari zona waktu perangkat,
+  // supaya tetap akurat walau HP operator tidak di-set ke WIB.
+  var now = new Date();
+  var wib = new Date(now.getTime() + 7*3600000 - now.getTimezoneOffset()*60000);
+  var hours = wib.getUTCHours(), minutes = wib.getUTCMinutes();
+  var totalMin = hours*60 + minutes;
+
+  var shift, dayOffset;
+  if(totalMin >= 601 && totalMin <= 960){        // 10:01 - 16:00
+    shift = 1; dayOffset = 0;
+  } else if(totalMin >= 961){                     // 16:01 - 23:59
+    shift = 2; dayOffset = 0;
+  } else if(totalMin <= 120){                     // 00:00 - 02:00 (lanjutan shift 2 semalam)
+    shift = 2; dayOffset = -1;
+  } else {                                        // 02:01 - 10:00
+    shift = 3; dayOffset = 0;
+  }
+
+  var baseUTC = Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate());
+  var d = new Date(baseUTC + dayOffset*86400000);
+  var y = d.getUTCFullYear();
+  var mo = String(d.getUTCMonth()+1).padStart(2,'0');
+  var da = String(d.getUTCDate()).padStart(2,'0');
+  return { dateStr: y+'-'+mo+'-'+da, shift: shift };
+}
+
 var pendingConfirmAction = null;
-function openConfirmModal(bodyHtml, onConfirm){
+function openConfirmModal(bodyHtml, onConfirm, opts){
+  opts = opts || {};
   document.getElementById('lhModalBody').innerHTML = bodyHtml;
+  document.getElementById('lhModalConfirm').textContent = opts.confirmLabel || 'Ya, Kirim Laporan';
+  document.getElementById('lhModalCancel').textContent = opts.cancelLabel || 'Batal, Periksa Lagi';
   document.getElementById('lhModalOverlay').classList.add('show');
   pendingConfirmAction = onConfirm;
 }
@@ -270,7 +302,7 @@ function initConfirmModal(){
   document.getElementById('lhModalCancel').addEventListener('click', closeConfirmModal);
   document.getElementById('lhModalConfirm').addEventListener('click', async function(){
     var btn = this;
-    if(btn.disabled) return;
+    if(btn.disabled) return; // cegah klik dobel saat sedang mengirim
     if(!pendingConfirmAction) return;
     btn.disabled = true;
     var originalText = btn.textContent;
@@ -334,6 +366,7 @@ async function attemptConnect(){
       setStatus('Gagal terhubung: ' + (data && data.error ? data.error : 'ID atau URL tidak valid.'), 'err');
     }
   }catch(e){
+    // kemungkinan dibatasi CORS oleh browser -- tetap simpan koneksi tapi tanpa nama terverifikasi
     setStatus('Tidak bisa memverifikasi nama file (kemungkinan dibatasi browser), tapi koneksi tetap disimpan.', 'warn');
     showConnectedBadge(null);
   }
@@ -358,6 +391,7 @@ function checkSetup(){
     if(!needsSheet) sheetInput.value = SPREADSHEET_ID;
     return false;
   }
+  // sudah ada konfigurasi (mis. dari ?sheet= di URL) -- coba verifikasi otomatis
   document.getElementById('scriptUrlInput').value = SCRIPT_URL;
   document.getElementById('sheetIdInput').value = SPREADSHEET_ID;
   attemptConnect();
@@ -403,6 +437,7 @@ async function sendToSheet(sheetName, values){
       headers: {'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({ spreadsheetId: SPREADSHEET_ID, sheet: sheetName, values: values })
     });
+    // mode no-cors -> respons tidak bisa dibaca, kita anggap terkirim
     return true;
   }catch(e){
     toast('Gagal mengirim (cek koneksi internet).');
@@ -422,7 +457,22 @@ function renderTabs(){
       '</div>';
   }).join('');
   Array.prototype.forEach.call(wrap.querySelectorAll('.lh-tab'), function(el){
-    el.addEventListener('click', function(){ switchTab(el.getAttribute('data-tab')); });
+    el.addEventListener('click', function(){ confirmSwitchTab(el.getAttribute('data-tab')); });
+  });
+}
+
+function confirmSwitchTab(tab){
+  if(tab === activeTab) return; // sudah di tab ini, tidak perlu konfirmasi
+  var m = META[tab];
+  var body =
+    '<div style="text-align:center; padding:6px 0 4px">'+
+      '<div style="font-size:13px; color:#333333; margin-bottom:6px">Anda akan mengisi laporan untuk:</div>'+
+      '<div style="font-family:\'Space Grotesk\',sans-serif; font-weight:700; font-size:22px; color:'+m.color+'">'+esc(m.label)+'</div>'+
+      '<div style="font-size:12px; color:#555555; margin-top:8px">Pastikan pilihan ini sudah benar sebelum melanjutkan.</div>'+
+    '</div>';
+  openConfirmModal(body, function(){ switchTab(tab); }, {
+    confirmLabel: 'Ya, Pilih ' + m.label,
+    cancelLabel: 'Batal'
   });
 }
 
@@ -438,10 +488,13 @@ function renderMachinePanel(tab){
   body.style.setProperty('--accent', m.color);
   var productOptions = PRODUCT_NAMES.map(function(p){return '<option value="'+esc(p)+'">'+esc(p)+'</option>';}).join('');
 
+  var auto = getAutoDateShift();
+  draftShift[tab] = auto.shift;
+
   body.innerHTML =
     '<div class="lh-section-title">Laporan '+m.label+'</div>'+
     '<div class="lh-grid" style="margin-top:6px">'+
-      '<div class="lh-field"><label>Tanggal</label><input type="date" id="f_tanggal" value="'+todayStr()+'"></div>'+
+      '<div class="lh-field"><label>Tanggal</label><input type="date" id="f_tanggal" value="'+auto.dateStr+'"></div>'+
       '<div class="lh-field"><label>Shift</label><div class="lh-shift" id="f_shift">'+
         [1,2,3].map(function(s){return '<button type="button" data-shift="'+s+'" class="'+(draftShift[tab]===s?'active':'')+'">'+s+'</button>';}).join('')+
       '</div></div>'+
@@ -456,7 +509,7 @@ function renderMachinePanel(tab){
       '<div class="lh-field"><label>Jumlah Cup per Box (pcs) <span style="color:var(--bad)">*wajib</span></label><input type="number" id="f_cupsbox" min="0" placeholder="mis. 2000"></div>'+
       '<div class="lh-field"><label>Standar Berat Cup (gr) <span style="color:var(--bad)">*wajib</span></label><input type="number" id="f_cupweight" min="0" step="0.01" placeholder="mis. 2"></div>'+
     '</div>'+
-    '<div class="lh-note">Standar Berat Cup dipakai untuk mengubah berat reject (kg) yang Anda input di bawah menjadi jumlah pcs otomatis sebelum dikirim to spreadsheet.</div>'+
+    '<div class="lh-note">Standar Berat Cup dipakai untuk mengubah berat reject (kg) yang Anda input di bawah menjadi jumlah pcs otomatis sebelum dikirim ke spreadsheet.</div>'+
 
     '<div class="lh-section-title">Hasil Produksi</div>'+
     '<div class="lh-grid">'+
@@ -635,6 +688,7 @@ function renderMachinePanel(tab){
     var ta = document.getElementById('waText');
     ta.select();
     ta.setSelectionRange(0, 999999);
+    var copied = false;
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(ta.value).then(function(){ toast('Teks laporan disalin.'); }).catch(function(){
         try{ document.execCommand('copy'); toast('Teks laporan disalin.'); }catch(e){ toast('Gagal menyalin, salin manual dari kotak teks.'); }
@@ -683,10 +737,12 @@ function confirmAndSaveMachineEntry(tab){
 
   var colorCards = document.querySelectorAll('#f_colors .lh-counter');
   Array.prototype.forEach.call(colorCards, function(card, idx){
-    var base = COLOR_BLOCK_START + idx*5;
+    var base = COLOR_BLOCK_START + idx*5;   // I, N, S, X, AC, AH, AM
+    // nama warna (base) TIDAK dikirim -- sudah otomatis terisi via rumus VLOOKUP ke sheet Warna
     values[base+1] = parseFloat(card.querySelector('.c-awal').value)||0;
     values[base+2] = parseFloat(card.querySelector('.c-ambil').value)||0;
     values[base+3] = parseFloat(card.querySelector('.c-akhir').value)||0;
+    // base+4 = PAKAI, rumus otomatis, tidak dikirim
   });
   var mCard = document.querySelector('#f_methanol .lh-counter');
   values[METHANOL_AWAL_COL] = parseFloat(mCard.querySelector('.c-awal').value)||0;
@@ -751,6 +807,7 @@ function renderLog(tab){
   }).join('');
 }
 
+/* ---------- SPAREPART ---------- */
 function renderSparepartPanel(){
   var m = META.SPAREPART;
   var body = document.getElementById('lhBody');
@@ -760,7 +817,7 @@ function renderSparepartPanel(){
   body.innerHTML =
     '<div class="lh-section-title">Laporan Keluar-Masuk Sparepart</div>'+
     '<div class="lh-grid g2" style="margin-top:6px">'+
-      '<div class="lh-field"><label>Tanggal</label><input type="date" id="s_tanggal" value="'+todayStr()+'"></div>'+
+      '<div class="lh-field"><label>Tanggal</label><input type="date" id="s_tanggal" value="'+getAutoDateShift().dateStr+'"></div>'+
       '<div class="lh-field"><label>Nama Pelapor</label><input type="text" id="s_pelapor" placeholder="Nama operator/gudang"></div>'+
     '</div>'+
     '<div class="lh-grid g2" style="margin-top:10px">'+
@@ -799,6 +856,7 @@ function confirmAndSaveSparepartEntry(){
   if(!tanggal || !item){ toast('Lengkapi tanggal dan item dulu.'); return; }
   if(masuk===0 && keluar===0){ toast('Isi jumlah Masuk atau Keluar.'); return; }
 
+  // INSP columns: 1 CODE(formula,skip) 2 TANGGAL 3 ITEM 4 TIPE 5 MASUK 6 KELUAR 7 KETERANGAN 8 PELAPOR
   var values = {2:tanggal, 3:item, 4:tipe, 5:masuk||'', 6:keluar||'', 7:ket, 8:pelapor};
   var meta = {tanggal:tanggal, item:item, tipe:tipe, masuk:masuk, keluar:keluar, keterangan:ket};
 
