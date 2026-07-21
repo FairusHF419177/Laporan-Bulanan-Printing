@@ -268,14 +268,17 @@ function getAutoDateShift(){
   var totalMin = hours*60 + minutes;
 
   var shift, dayOffset;
+  // Hari produksi baru dimulai jam 10:01 (awal shift 1). Sebelum itu -- baik
+  // lanjutan shift 2 tengah malam maupun shift 3 -- masih dianggap bagian dari
+  // hari produksi SEBELUMNYA, jadi tanggalnya ikut kemarin.
   if(totalMin >= 601 && totalMin <= 960){        // 10:01 - 16:00
     shift = 1; dayOffset = 0;
   } else if(totalMin >= 961){                     // 16:01 - 23:59
     shift = 2; dayOffset = 0;
   } else if(totalMin <= 120){                     // 00:00 - 02:00 (lanjutan shift 2 semalam)
     shift = 2; dayOffset = -1;
-  } else {                                        // 02:01 - 10:00
-    shift = 3; dayOffset = 0;
+  } else {                                        // 02:01 - 10:00 (shift 3, masih hari produksi kemarin)
+    shift = 3; dayOffset = -1;
   }
 
   var baseUTC = Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate());
