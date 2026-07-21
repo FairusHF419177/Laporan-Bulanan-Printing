@@ -259,10 +259,11 @@ var draftShift = {INP1:1,INP2:1,INP3:1,INP4:1};
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
 function getAutoDateShift(){
-  // Hitung waktu WIB (UTC+7) secara independen dari zona waktu perangkat,
-  // supaya tetap akurat walau HP operator tidak di-set ke WIB.
+  // now.getTime() sudah berupa epoch UTC absolut (tidak tergantung zona waktu HP),
+  // jadi cukup tambahkan +7 jam untuk dapat waktu WIB -- TIDAK perlu (dan salah kalau)
+  // masih dikurangi lagi dengan offset zona waktu perangkat.
   var now = new Date();
-  var wib = new Date(now.getTime() + 7*3600000 - now.getTimezoneOffset()*60000);
+  var wib = new Date(now.getTime() + 7*3600000);
   var hours = wib.getUTCHours(), minutes = wib.getUTCMinutes();
   var totalMin = hours*60 + minutes;
 
