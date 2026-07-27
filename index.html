@@ -247,10 +247,10 @@ var SPAREPARTS = [
 // ... pola sama tiap 5 kolom untuk C2..C7
 // AR M AWAL(44) AS M AMBIL(45) AT M AKHIR(46) AU M PAKAI[formula]
 // AV KETERANGAN(48) AW PELAPOR(49)
-var COLOR_BLOCK_START = 9; // I
-var METHANOL_AWAL_COL = 44;
-var KETERANGAN_COL = 48;
-var PELAPOR_COL = 49;
+var COLOR_BLOCK_START = 10; // J (bergeser +1 karena kolom BOX baru di posisi E)
+var METHANOL_AWAL_COL = 45;
+var KETERANGAN_COL = 49;
+var PELAPOR_COL = 50;
 
 var cache = {INP1:[],INP2:[],INP3:[],INP4:[],SPAREPART:[]};
 var activeTab = 'INP1';
@@ -735,13 +735,14 @@ function confirmAndSaveMachineEntry(tab){
   values[2] = shift;
   values[3] = produk;
   values[4] = tipe;
-  values[5] = hasilPcs;
-  values[6] = rpolosPcs;
-  values[7] = rprintPcs;
+  values[5] = hasilBox;
+  values[6] = hasilPcs;
+  values[7] = rpolosPcs;
+  values[8] = rprintPcs;
 
   var colorCards = document.querySelectorAll('#f_colors .lh-counter');
   Array.prototype.forEach.call(colorCards, function(card, idx){
-    var base = COLOR_BLOCK_START + idx*5;   // I, N, S, X, AC, AH, AM
+    var base = COLOR_BLOCK_START + idx*5;   // J, O, T, Y, AD, AI, AN
     // nama warna (base) TIDAK dikirim -- sudah otomatis terisi via rumus VLOOKUP ke sheet Warna
     values[base+1] = parseFloat(card.querySelector('.c-awal').value)||0;
     values[base+2] = parseFloat(card.querySelector('.c-ambil').value)||0;
