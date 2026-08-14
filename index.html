@@ -1,1392 +1,939 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Form Laporan QC</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg: #EDF0EE;
-    --surface: #FFFFFF;
-    --surface-2: #F5F7F5;
-    --ink: #1B2024;
-    --ink-soft: #5B6470;
-    --line: #D8DEDA;
-    --steel: #24344A;
-    --steel-2: #33496A;
-    --amber: #F2A900;
-    --amber-ink: #4A3300;
-    --dusk: #E0652C;
-    --dusk-ink: #4A2000;
-    --night: #2C3454;
-    --night-2: #4A5580;
-    --ok: #2E7D4F;
-    --danger: #C13B2E;
-    --radius: 10px;
-    --shadow: 0 1px 2px rgba(20,30,40,.06), 0 8px 24px -12px rgba(20,30,40,.18);
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:
-      radial-gradient(1200px 400px at 10% -10%, rgba(44,52,84,.06), transparent 60%),
-      var(--bg);
-    color:var(--ink);
-    font-family:'Inter',system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased;
-    min-height:100vh;
-    padding:20px 16px 60px;
-  }
-  .wrap{max-width:1080px;margin:0 auto;}
-
-  /* ---------- Header / shift gauge ---------- */
-  .topbar{
-    background:var(--steel);
-    background-image:linear-gradient(135deg, var(--steel) 0%, var(--steel-2) 100%);
-    border-radius: var(--radius);
-    color:#fff;
-    padding:20px 22px 18px;
-    box-shadow:var(--shadow);
-    margin-bottom:18px;
-    position:relative;
-    overflow:hidden;
-  }
-  .topbar::after{
-    content:"";
-    position:absolute; inset:0;
-    background-image: repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 2px, transparent 2px 26px);
-    pointer-events:none;
-  }
-  .eyebrow{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:#B9C6DC;
-    margin:0 0 4px;
-  }
-  .title-row{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;}
-  h1{
-    font-family:'Archivo Expanded',sans-serif;
-    font-weight:800;
-    font-size:26px;
-    margin:0;
-    letter-spacing:.01em;
-  }
-  .clock{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px;
-    color:#DCE4F0;
-    text-align:right;
-  }
-  .clock b{display:block; font-size:20px; color:#fff; font-weight:600;}
-
-  /* shift timeline */
-  .shift-gauge{
-    margin-top:16px;
-    position:relative;
-    z-index:1;
-  }
-  .shift-track{
-    display:flex;
-    height:34px;
-    border-radius:8px;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.14);
-  }
-  .seg{
-    display:flex; align-items:center; justify-content:center;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11.5px;
-    letter-spacing:.06em;
-    color:rgba(255,255,255,.55);
-    background:rgba(255,255,255,.045);
-    position:relative;
-    transition:.25s;
-  }
-  .seg.active{color:#1B2024; font-weight:600;}
-  .seg[data-shift="1"].active{background:var(--amber); color:var(--amber-ink);}
-  .seg[data-shift="2"].active{background:var(--dusk); color:#fff;}
-  .seg[data-shift="3"].active{background:var(--night-2); color:#fff;}
-  .seg + .seg{border-left:1px solid rgba(255,255,255,.14);}
-  .seg-label{}
-  .seg-time{opacity:.85;}
-  .seg-label::after{content:" · "; opacity:.6;}
-  @media (max-width: 640px){
-    .seg-label::after{content:""; display:none;}
-  }
-  .marker{
-    position:absolute; top:-6px;
-    width:2px; height:46px;
-    background:#fff;
-    box-shadow:0 0 0 3px rgba(255,255,255,.18);
-    transition:left .5s linear;
-  }
-  .marker::after{
-    content:"SEKARANG";
-    position:absolute; top:-16px; left:50%; transform:translateX(-50%);
-    font-family:'IBM Plex Mono',monospace;
-    font-size:9px; letter-spacing:.08em;
-    color:#DCE4F0; white-space:nowrap;
-  }
-
-  /* ---------- Layout ---------- */
-  .grid{
-    display:grid;
-    grid-template-columns: 1.15fr 1fr;
-    gap:18px;
-    align-items:start;
-  }
-  @media (max-width: 860px){ .grid{grid-template-columns:1fr;} }
-
-  .card{
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:20px;
-  }
-  .card h2{
-    font-family:'Archivo Expanded',sans-serif;
-    font-size:15px;
-    letter-spacing:.03em;
-    text-transform:uppercase;
-    margin:0 0 16px;
-    color:var(--steel);
-  }
-
-  /* pipeline selects */
-  .pipeline{
-    display:flex;
-    gap:0;
-    margin-bottom:18px;
-  }
-  .pipe-step{
-    flex:1;
-    position:relative;
-    padding-right:22px;
-  }
-  .pipe-step:last-child{padding-right:0;}
-  .pipe-step::after{
-    content:"→";
-    position:absolute; right:2px; top:34px;
-    color:var(--ink-soft);
-    font-size:16px;
-  }
-  .pipe-step:last-child::after{content:none;}
-  label{
-    display:block;
-    font-size:11px;
-    font-weight:600;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    margin-bottom:6px;
-  }
-  .num{
-    display:inline-block;
-    font-family:'IBM Plex Mono',monospace;
-    color:var(--steel-2);
-    margin-right:4px;
-  }
-  select, input[type=text], input[type=datetime-local], textarea{
-    width:100%;
-    font-family:'Inter',sans-serif;
-    font-size:16px;
-    padding:11px 12px;
-    border-radius:8px;
-    border:1.5px solid var(--line);
-    background:var(--surface-2);
-    color:var(--ink);
-    transition:border-color .15s, background .15s;
-    -webkit-appearance:none;
-    appearance:none;
-  }
-  select{
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%235B6470'><path d='M5.5 7.5l4.5 4.5 4.5-4.5' stroke='%235B6470' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat:no-repeat;
-    background-position:right 10px center;
-    background-size:16px;
-    padding-right:32px;
-  }
-  select:disabled{color:#9AA3AC; cursor:not-allowed;}
-  select:focus, input:focus, textarea:focus{
-    outline:none;
-    border-color:var(--steel-2);
-    background-color:#fff;
-  }
-  textarea{resize:vertical; min-height:64px;}
-  .field{margin-bottom:14px;}
-  .row2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-
-  .shift-readout{
-    display:flex; align-items:center; gap:10px;
-    padding:9px 11px;
-    border-radius:8px;
-    background:var(--surface-2);
-    border:1.5px solid var(--line);
-    font-family:'IBM Plex Mono',monospace;
-    font-size:14px;
-  }
-  .shift-dot{width:10px;height:10px;border-radius:50%;background:var(--amber);}
-
-  .btn{
-    appearance:none; border:none; cursor:pointer;
-    font-family:'Inter',sans-serif; font-weight:600; font-size:14.5px;
-    padding:12px 18px; border-radius:8px;
-    background:var(--steel);
-    color:#fff;
-    width:100%;
-    transition:background .15s, transform .1s;
-  }
-  .btn:hover{background:var(--steel-2);}
-  .btn:active{transform:scale(.99);}
-  .btn-secondary{
-    background:transparent; color:var(--steel);
-    border:1.5px solid var(--line);
-    width:auto; padding:8px 14px; font-size:13px;
-  }
-  .btn-secondary:hover{background:var(--surface-2);}
-  .btn-danger-ghost{
-    background:transparent; border:none; color:var(--danger);
-    font-size:12px; cursor:pointer; padding:2px 4px; width:auto;
-  }
-
-  .status-msg{
-    margin-top:10px; font-size:13px; padding:9px 11px; border-radius:8px; display:none;
-  }
-  .status-msg.ok{display:block; background:#E7F3EC; color:var(--ok); border:1px solid #BEE0CC;}
-  .status-msg.err{display:block; background:#FBEAE8; color:var(--danger); border:1px solid #F1C4BE;}
-
-  /* log */
-  .log-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;}
-  .log-head h2{margin:0;}
-  .entry{
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:12px 12px 10px;
-    margin-bottom:10px;
-    background:var(--surface-2);
-  }
-  .entry-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
-  .entry-tags{display:flex; gap:6px; flex-wrap:wrap;}
-  .tag{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;
-    padding:3px 7px;
-    border-radius:5px;
-    background:#fff;
-    border:1px solid var(--line);
-    color:var(--steel-2);
-  }
-  .tag.shift1{background:#FFF3D6; border-color:#F0D48A; color:var(--amber-ink);}
-  .tag.shift2{background:#FCE3D6; border-color:#EFB596; color:var(--dusk-ink);}
-  .tag.shift3{background:#E4E7F2; border-color:#B9C1E0; color:var(--night);}
-  .entry-body{font-size:13.5px; margin-top:8px; line-height:1.5;}
-  .entry-body b{color:var(--ink);}
-  .entry-meta{
-    margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);
-    display:flex; justify-content:space-between;
-  }
-  .empty{
-    text-align:center; padding:30px 10px; color:var(--ink-soft); font-size:13.5px;
-  }
-  .loading{color:var(--ink-soft); font-size:13px; text-align:center; padding:20px;}
-  .count-pill{
-    font-family:'IBM Plex Mono',monospace; font-size:11px;
-    background:var(--steel); color:#fff; padding:3px 9px; border-radius:20px;
-  }
-  .hint{font-size:11.5px; color:var(--ink-soft); margin-top:-6px; margin-bottom:14px;}
-  .shared-note{
-    font-size:11.5px; color:var(--ink-soft); margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);
-  }
-
-  /* copy button */
-  .btn-copy{
-    background:transparent; border:1.5px solid var(--line); color:var(--steel-2);
-    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
-    padding:5px 10px; border-radius:6px; cursor:pointer; width:auto;
-    display:inline-flex; align-items:center; gap:5px;
-    transition:background .15s, border-color .15s, color .15s;
-  }
-  .btn-copy:hover{background:var(--surface); border-color:var(--steel-2);}
-  .btn-copy.copied{background:#E7F3EC; border-color:#BEE0CC; color:var(--ok);}
-  .entry-actions{display:flex; align-items:center; gap:8px;}
-
-  /* confirm modal */
-  .modal-overlay{
-    position:fixed; inset:0; background:rgba(20,26,34,.52);
-    display:none; align-items:center; justify-content:center;
-    padding:16px; z-index:50;
-  }
-  .modal-overlay.open{display:flex;}
-  .modal-box{
-    background:#fff; border-radius:12px; max-width:460px; width:100%;
-    box-shadow:0 20px 60px -12px rgba(10,15,20,.35);
-    max-height:88vh; overflow-y:auto;
-  }
-  .modal-head{
-    padding:18px 20px 14px; border-bottom:1px solid var(--line);
-  }
-  .modal-head .eyebrow2{
-    font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--ink-soft); margin:0 0 3px;
-  }
-  .modal-head h3{
-    font-family:'Archivo Expanded',sans-serif; font-size:17px; margin:0; color:var(--ink);
-  }
-  .modal-body{padding:14px 20px;}
-  .confirm-row{
-    display:flex; justify-content:space-between; gap:14px;
-    padding:8px 0; border-bottom:1px solid var(--surface-2);
-    font-size:13.5px;
-  }
-  .confirm-row:last-child{border-bottom:none;}
-  .confirm-row .k{color:var(--ink-soft); flex-shrink:0;}
-  .confirm-row .v{text-align:right; font-weight:500; color:var(--ink);}
-  .modal-foot{
-    padding:14px 20px 18px; display:flex; gap:10px;
-    border-top:1px solid var(--line);
-  }
-  .btn-ghost{
-    background:transparent; color:var(--ink-soft); border:1.5px solid var(--line);
-  }
-  .btn-ghost:hover{background:var(--surface-2); color:var(--ink);}
-
-  /* connection to google sheets */
-  .conn-badge{
-    display:inline-flex; align-items:center; gap:6px;
-    font-family:'IBM Plex Mono',monospace; font-size:11px;
-    padding:4px 9px; border-radius:20px;
-    background:rgba(255,255,255,.08); color:#DCE4F0;
-    cursor:pointer; border:1px solid rgba(255,255,255,.16);
-    margin-top:10px;
-  }
-  .conn-dot{width:7px; height:7px; border-radius:50%; background:#9AA3AC;}
-  .conn-badge.connected .conn-dot{background:#5FD892;}
-  .conn-badge.error .conn-dot{background:#F0776A;}
-
-  .settings-card{
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
-    box-shadow:var(--shadow); margin-bottom:18px; overflow:hidden;
-  }
-  .settings-head{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 18px; cursor:pointer; user-select:none;
-  }
-  .settings-head h2{
-    font-family:'Archivo Expanded',sans-serif; font-size:13.5px; letter-spacing:.03em;
-    text-transform:uppercase; margin:0; color:var(--steel);
-  }
-  .settings-chevron{transition:transform .2s; color:var(--ink-soft); font-size:12px;}
-  .settings-card.open .settings-chevron{transform:rotate(180deg);}
-  .settings-body{
-    max-height:0; overflow:hidden; transition:max-height .25s ease;
-  }
-  .settings-card.open .settings-body{max-height:320px;}
-  .settings-inner{padding:0 18px 18px;}
-  .settings-inner p{font-size:12.5px; color:var(--ink-soft); line-height:1.6; margin:0 0 12px;}
-  .settings-row{display:flex; gap:10px; align-items:flex-end;}
-  .settings-row .field{flex:1; margin-bottom:0;}
-  .conn-status-line{
-    display:flex; align-items:center; gap:8px; margin-top:10px;
-    font-size:12.5px; color:var(--ink-soft);
-  }
-  .conn-status-line .conn-dot{width:8px;height:8px;}
-
-  /* shift summary (untuk WhatsApp) */
-  .summary-box{
-    background:var(--surface-2); border:1px dashed var(--line); border-radius:8px;
-    padding:12px 13px; margin-bottom:16px;
-  }
-  .summary-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;}
-  .summary-head h3{
-    font-family:'Archivo Expanded',sans-serif; font-size:12px; letter-spacing:.03em;
-    text-transform:uppercase; margin:0; color:var(--steel);
-  }
-  .summary-pre{
-    white-space:pre-wrap; word-break:break-word;
-    font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.65;
-    margin:0; color:var(--ink); max-height:260px; overflow-y:auto;
-  }
-
-  /* ---------- Mobile responsiveness ---------- */
-  @media (max-width: 640px){
-    body{padding:12px 10px 48px;}
-    .topbar{padding:16px 16px 14px; border-radius:12px;}
-    h1{font-size:20px;}
-    .eyebrow{font-size:10px;}
-    .title-row{align-items:flex-start; gap:10px;}
-    .clock{text-align:left;}
-    .clock b{font-size:17px;}
-
-    .shift-track{height:auto;}
-    .seg{
-      flex-direction:column; gap:1px;
-      padding:7px 2px; font-size:9.5px; line-height:1.3; text-align:center;
-      white-space:normal;
-    }
-
-    .card{padding:15px;}
-    .card h2{font-size:13.5px; margin-bottom:12px;}
-
-    /* stack the divisi -> mesin -> produk pipeline vertically */
-    .pipeline{flex-direction:column; gap:14px;}
-    .pipe-step{padding-right:0;}
-    .pipe-step::after{
-      content:"↓";
-      position:static;
-      display:block;
-      text-align:center;
-      margin:6px 0 -4px;
-      font-size:14px;
-    }
-    .pipe-step:last-child::after{content:none; margin:0;}
-
-    .row2{grid-template-columns:1fr; gap:12px;}
-
-    select, input[type=text], input[type=datetime-local], textarea{
-      font-size:16px; /* keeps iOS from auto-zooming on focus */
-      padding:12px 12px;
-    }
-
-    .settings-row{flex-direction:column; align-items:stretch;}
-    .settings-row .btn-secondary{width:100%;}
-
-    .entry-top{flex-wrap:wrap;}
-    .entry-actions{flex-wrap:wrap;}
-    .entry-meta{flex-direction:column; align-items:flex-start; gap:3px;}
-
-    .modal-box{max-height:92vh;}
-    .modal-foot{flex-direction:column-reverse;}
-    .confirm-row{font-size:13px;}
-
-    .conn-badge{width:100%; justify-content:center;}
-  }
-
-  @media (max-width: 380px){
-    h1{font-size:18px;}
-    .seg{font-size:8.5px;}
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-
-  <div class="topbar">
-    <div class="eyebrow">Laporan Quality Control · Lini Produksi · Waktu WIB</div>
-    <div class="title-row">
-      <h1>Form Laporan QC</h1>
-      <div class="clock">
-        <span id="clockDate">--</span>
-        <b id="clockTime">--:--:--</b>
-      </div>
-    </div>
-    <div class="shift-gauge">
-      <div class="shift-track">
-        <div class="seg" data-shift="1" style="flex:1;"><span class="seg-label">SHIFT 1</span><span class="seg-time">06:00–14:00</span></div>
-        <div class="seg" data-shift="2" style="flex:1;"><span class="seg-label">SHIFT 2</span><span class="seg-time">14:00–22:00</span></div>
-        <div class="seg" data-shift="3" style="flex:1;"><span class="seg-label">SHIFT 3</span><span class="seg-time">22:00–06:00</span></div>
-      </div>
-      <div class="marker" id="nowMarker"></div>
-    </div>
-    <div class="conn-badge" id="connBadge" title="Klik untuk buka pengaturan koneksi Google Sheets">
-      <span class="conn-dot"></span>
-      <span id="connBadgeText">Google Sheets: belum disambungkan</span>
-    </div>
-  </div>
-
-  <div class="settings-card" id="settingsCard">
-    <div class="settings-head" id="settingsHead">
-      <h2>⚙ Pengaturan Koneksi Google Sheets</h2>
-      <span class="settings-chevron">▾</span>
-    </div>
-    <div class="settings-body">
-      <div class="settings-inner">
-        <p>Tempel URL Web App (dari Google Apps Script yang di-deploy pada spreadsheet <b>QC new form</b>) supaya setiap laporan yang disimpan di sini juga otomatis masuk ke sheet INPUT. Pengaturan ini tersimpan bersama untuk semua pengguna form.</p>
-        <div class="settings-row">
-          <div class="field">
-            <label>URL Web App Apps Script</label>
-            <input type="text" id="fWebAppUrl" placeholder="https://script.google.com/macros/s/…/exec">
-          </div>
-          <button class="btn btn-secondary" id="saveConfigBtn" style="flex-shrink:0;">Simpan</button>
-          <button class="btn btn-secondary" id="testConfigBtn" style="flex-shrink:0;">Tes Koneksi</button>
-        </div>
-        <div class="conn-status-line"><span class="conn-dot" id="connDetailDot"></span><span id="connDetailText">Belum ada URL tersimpan.</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid">
-    <!-- FORM -->
-    <div class="card">
-      <h2>Input Laporan</h2>
-
-      <div class="pipeline">
-        <div class="pipe-step">
-          <label><span class="num">01</span>Divisi</label>
-          <select id="fDivisi"><option value="">Pilih…</option></select>
-        </div>
-        <div class="pipe-step">
-          <label><span class="num">02</span>Mesin</label>
-          <select id="fMesin" disabled><option value="">Pilih divisi dulu</option></select>
-        </div>
-        <div class="pipe-step">
-          <label><span class="num">03</span>Produk</label>
-          <select id="fProduk" disabled><option value="">Pilih mesin dulu</option></select>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Temuan</label>
-        <textarea id="fTemuan" placeholder="Contoh: Cup tipis, sablon geser, sheet retak…"></textarea>
-      </div>
-      <div class="field">
-        <label>Solusi / Tindakan</label>
-        <textarea id="fSolusi" placeholder="Contoh: Ganti sheet, adjust mesin, reject produk…"></textarea>
-      </div>
-
-      <div class="row2">
-        <div class="field">
-          <label>Operator Mesin</label>
-          <input type="text" id="fOperator" placeholder="Nama operator">
-        </div>
-        <div class="field">
-          <label>TTD QC</label>
-          <input type="text" id="fTtdQc" placeholder="Nama QC">
-        </div>
-      </div>
-
-      <div class="row2">
-        <div class="field">
-          <label>Timestamp</label>
-          <input type="datetime-local" id="fTimestamp">
-        </div>
-        <div class="field">
-          <label>Shift (otomatis)</label>
-          <div class="shift-readout"><span class="shift-dot" id="shiftDot"></span><span id="shiftReadout">–</span></div>
-        </div>
-      </div>
-
-      <button class="btn" id="submitBtn">Simpan Laporan</button>
-      <div class="status-msg" id="statusMsg"></div>
-
-      <div class="shared-note">Data disimpan bersama (shared) di form ini, dan otomatis dikirim ke sheet INPUT bila koneksi Google Sheets sudah diatur di atas.</div>
-    </div>
-
-    <!-- LOG -->
-    <div class="card">
-      <div class="log-head">
-        <h2 style="margin:0;">Riwayat Laporan</h2>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span class="count-pill" id="countPill">0</span>
-          <button class="btn btn-secondary" id="exportBtn">Ekspor CSV</button>
-        </div>
-      </div>
-      <div id="logList"><div class="loading">Memuat data…</div></div>
-    </div>
-  </div>
-
-  <!-- PREVIOUS SHIFT (langsung dari Google Sheets, gabungan semua user) -->
-  <div class="card" id="prevShiftCard" style="margin-top:18px;">
-    <div class="log-head">
-      <div>
-        <h2 style="margin:0;">Laporan Shift Sebelumnya</h2>
-        <div class="hint" id="prevShiftRangeLabel" style="margin:4px 0 0;">–</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span class="count-pill" id="prevShiftCountPill">0</span>
-        <button class="btn btn-secondary" id="refreshPrevShiftBtn">↻ Muat Ulang</button>
-      </div>
-    </div>
-    <div class="summary-box" id="summaryBox">
-      <div class="summary-head">
-        <h3>Rangkuman untuk WhatsApp</h3>
-        <button class="btn-copy" id="copySummaryBtn">⧉ Salin Rangkuman</button>
-      </div>
-      <pre class="summary-pre" id="summaryPreview">–</pre>
-    </div>
-
-    <div id="prevShiftList"><div class="loading">Menyambungkan ke Google Sheets…</div></div>
-  </div>
-
-</div>
-
-<!-- Confirmation modal -->
-<div class="modal-overlay" id="confirmOverlay">
-  <div class="modal-box">
-    <div class="modal-head">
-      <p class="eyebrow2">Konfirmasi Sebelum Simpan</p>
-      <h3>Periksa laporan berikut</h3>
-    </div>
-    <div class="modal-body">
-      <div class="confirm-row"><span class="k">Divisi</span><span class="v" id="cfDivisi">–</span></div>
-      <div class="confirm-row"><span class="k">Mesin</span><span class="v" id="cfMesin">–</span></div>
-      <div class="confirm-row"><span class="k">Produk</span><span class="v" id="cfProduk">–</span></div>
-      <div class="confirm-row"><span class="k">Temuan</span><span class="v" id="cfTemuan">–</span></div>
-      <div class="confirm-row"><span class="k">Solusi</span><span class="v" id="cfSolusi">–</span></div>
-      <div class="confirm-row"><span class="k">Operator Mesin</span><span class="v" id="cfOperator">–</span></div>
-      <div class="confirm-row"><span class="k">TTD QC</span><span class="v" id="cfTtdQc">–</span></div>
-      <div class="confirm-row"><span class="k">Timestamp</span><span class="v" id="cfTimestamp">–</span></div>
-      <div class="confirm-row"><span class="k">Shift</span><span class="v" id="cfShift">–</span></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="cfCancel">Periksa Lagi</button>
-      <button class="btn" id="cfConfirm">Ya, Simpan</button>
-    </div>
-  </div>
-</div>
-
 <script>
-// ---------- Storage abstraction ----------
-// window.storage hanya tersedia saat form dibuka di dalam Claude.ai (chat/artifact).
-// Saat di-hosting sendiri (GitHub Pages, server lain, dsb), window.storage tidak ada,
-// jadi di sini kita otomatis beralih ke localStorage browser sebagai gantinya.
-// Catatan: localStorage bersifat per-perangkat/per-browser (tidak "shared" antar user),
-// tapi ini hanya memengaruhi tampilan Riwayat Laporan di form — data laporan yang
-// sesungguhnya tetap masuk ke Google Sheets lewat Apps Script.
-const hasCloudStorage = (typeof window !== 'undefined') && !!window.storage
-  && typeof window.storage.get === 'function';
-
-async function storageGet(key, shared){
-  if (hasCloudStorage){
-    try{ return await window.storage.get(key, shared); }
-    catch(e){ return null; }
-  }
-  try{
-    const v = localStorage.getItem(key);
-    return v !== null ? { key, value: v, shared } : null;
-  }catch(e){ return null; }
+(function(){
+if(!document.querySelector('meta[name="viewport"]')){
+var m = document.createElement('meta');
+m.name = 'viewport';
+m.content = 'width=device-width, initial-scale=1, maximum-scale=1';
+document.head.appendChild(m);
 }
-
-async function storageSet(key, value, shared){
-  if (hasCloudStorage){
-    try{ return await window.storage.set(key, value, shared); }
-    catch(e){ return null; }
-  }
-  try{
-    localStorage.setItem(key, value);
-    return { key, value, shared };
-  }catch(e){ return null; }
+if(!document.querySelector('meta[charset]')){
+var c = document.createElement('meta');
+c.setAttribute('charset','utf-8');
+document.head.insertBefore(c, document.head.firstChild);
 }
-
-async function storageDelete(key, shared){
-  if (hasCloudStorage){
-    try{ return await window.storage.delete(key, shared); }
-    catch(e){ return null; }
-  }
-  try{
-    localStorage.removeItem(key);
-    return { key, deleted:true, shared };
-  }catch(e){ return null; }
-}
-
-async function storageList(prefix, shared){
-  if (hasCloudStorage){
-    try{ return await window.storage.list(prefix, shared); }
-    catch(e){ return { keys: [] }; }
-  }
-  try{
-    const keys = [];
-    for (let i=0; i<localStorage.length; i++){
-      const k = localStorage.key(i);
-      if (k && k.indexOf(prefix) === 0) keys.push(k);
-    }
-    return { keys };
-  }catch(e){ return { keys: [] }; }
-}
-
-const QC_DATA = {
-  divisi_mesin: {
-    "LOKAL": ["TF04","TF06","TF07","TF08","EXTR4P","EXTR5P"],
-    "EXPORT": ["TF11P","TF11L"],
-    "PRINTING": ["P1","P2","P3","P4"]
-  },
-  produk: {
-    "TF04": ["8oz","10oz","12oz","14oz"],
-    "TF06": ["120ml","180ml","220ml","150ps","200ps"],
-    "TF07": ["8oz","10oz","12oz","14oz"],
-    "TF08": ["14oz","16hallo","16slim","18hallo slim","18slim","22hallo slim","22slim"],
-    "EXTR4P": ["SheetPS","SheetNatural"],
-    "EXTR5P": ["SheetNatural"],
-    "TF11P": ["AAL","UAL","6oz","8oz","10oz","12oz","14oz"],
-    "TF11L": ["120ml","220ml","200ps"],
-    "P1": ["200 BOLA","150 BOLA","200 LETS TAKE COFFEE"],
-    "P2": ["200 BOLA","150 BOLA","200 LETS TAKE COFFEE"],
-    "P3": ["200 BOLA","150 BOLA","200 LETS TAKE COFFEE","16 ICE TEA","22s ICE TEA","22s TEH RAS","22s RAS RMD","16 IJUICE","22s IJUICE","16 COFFEE","16 TEH OCA","22s TEH OCA","22B TEH OCA","26B TEH OCA","150 SUSU SAPI","150 SUSU KAMBING","22s HOTWAYS","22s ASIA CROFFLE","12 WALDO","22s HBD","14U KRISTAL","22s JERUK PERAS"],
-    "P4": ["200 BOLA","150 BOLA","200 LETS TAKE COFFEE","16 ICE TEA","22s ICE TEA","22s TEH RAS","22s RAS RMD","16 IJUICE","22s IJUICE","16 COFFEE","16 TEH OCA","22s TEH OCA","22B TEH OCA","26B TEH OCA","150 SUSU SAPI","150 SUSU KAMBING","22s HOTWAYS","22s ASIA CROFFLE","12 WALDO","22s HBD","14U KRISTAL","22s JERUK PERAS"]
-  }
-};
-
-// ---------- helpers (semua waktu dihitung eksplisit sebagai WIB / Asia-Jakarta, UTC+7) ----------
-
-// Ambil komponen tanggal & jam suatu Date pada zona waktu WIB, apa pun zona waktu perangkat.
-function getWIBParts(date){
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Jakarta', hour12: false,
-    year:'numeric', month:'2-digit', day:'2-digit',
-    hour:'2-digit', minute:'2-digit', second:'2-digit'
-  });
-  const map = {};
-  fmt.formatToParts(date).forEach(p => { if (p.type !== 'literal') map[p.type] = parseInt(p.value, 10); });
-  if (map.hour === 24) map.hour = 0; // beberapa runtime melaporkan tengah malam sebagai jam 24
-  return map;
-}
-
-// Bangun Date (instant UTC yang benar) dari komponen tanggal/jam yang dimaksud sebagai WIB.
-// WIB = UTC+7 sepanjang tahun (tidak ada DST), jadi cukup dikurangi 7 jam.
-function wibDateUTC(year, month, day, hour, minute){
-  return new Date(Date.UTC(year, month - 1, day, hour - 7, minute || 0, 0));
-}
-
-function calcShift(dateObj){
-  const p = getWIBParts(dateObj);
-  const mins = p.hour*60 + p.minute;
-  if (mins >= 6*60 && mins < 14*60) return "1";   // 06:00–14:00 WIB
-  if (mins >= 14*60 && mins < 22*60) return "2";  // 14:00–22:00 WIB
-  return "3";                                      // 22:00–06:00 WIB
-}
-function pad(n){ return String(n).padStart(2,'0'); }
-
-// Nilai untuk <input type="datetime-local">, selalu ditampilkan sebagai jam WIB saat ini.
-function toLocalInputValue(d){
-  const p = getWIBParts(d);
-  return p.year+'-'+pad(p.month)+'-'+pad(p.day)+'T'+pad(p.hour)+':'+pad(p.minute);
-}
-
-// Kebalikannya: nilai dari <input type="datetime-local"> SELALU diperlakukan sebagai jam WIB
-// (bukan zona waktu perangkat), supaya hasilnya konsisten di perangkat mana pun.
-function parseWIBInputValue(str){
-  const [datePart, timePart] = str.split('T');
-  const [y,m,d] = datePart.split('-').map(Number);
-  const [hh,mm] = timePart.split(':').map(Number);
-  return wibDateUTC(y, m, d, hh, mm);
-}
-
-function fmtDisplay(d){
-  const p = getWIBParts(d);
-  const days=['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
-  const wd = new Date(Date.UTC(p.year, p.month-1, p.day)).getUTCDay();
-  return days[wd]+' '+pad(p.day)+'/'+pad(p.month)+'/'+p.year+' '+pad(p.hour)+':'+pad(p.minute)+' WIB';
-}
-function escapeHtml(s){
-  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function csvEscape(s){
-  const v = String(s ?? '');
-  if (/[",\n]/.test(v)) return '"'+v.replace(/"/g,'""')+'"';
-  return v;
-}
-
-// ---------- clock + shift gauge ----------
-const segs = document.querySelectorAll('.seg');
-function updateGauge(){
-  const now = new Date();
-  const p = getWIBParts(now);
-  document.getElementById('clockDate').textContent = fmtDisplay(now).split(' ').slice(0,2).join(' ');
-  document.getElementById('clockTime').textContent = pad(p.hour)+':'+pad(p.minute)+':'+pad(p.second)+' WIB';
-  const shift = calcShift(now);
-  segs.forEach(s => s.classList.toggle('active', s.dataset.shift === shift));
-  const pct = ((p.hour*60+p.minute)/1440)*100;
-  document.getElementById('nowMarker').style.left = 'calc(' + pct + '% - 1px)';
-}
-updateGauge();
-setInterval(updateGauge, 1000);
-
-// ---------- cascading selects ----------
-const fDivisi = document.getElementById('fDivisi');
-const fMesin = document.getElementById('fMesin');
-const fProduk = document.getElementById('fProduk');
-
-Object.keys(QC_DATA.divisi_mesin).forEach(d=>{
-  const o = document.createElement('option'); o.value=d; o.textContent=d;
-  fDivisi.appendChild(o);
-});
-
-fDivisi.addEventListener('change', ()=>{
-  fMesin.innerHTML = '';
-  fProduk.innerHTML = '<option value="">Pilih mesin dulu</option>';
-  fProduk.disabled = true;
-  if (!fDivisi.value){
-    fMesin.innerHTML = '<option value="">Pilih divisi dulu</option>';
-    fMesin.disabled = true;
-    return;
-  }
-  fMesin.disabled = false;
-  fMesin.appendChild(new Option('Pilih…',''));
-  QC_DATA.divisi_mesin[fDivisi.value].forEach(m=>{
-    fMesin.appendChild(new Option(m, m));
-  });
-});
-
-fMesin.addEventListener('change', ()=>{
-  fProduk.innerHTML = '';
-  if (!fMesin.value){
-    fProduk.innerHTML = '<option value="">Pilih mesin dulu</option>';
-    fProduk.disabled = true;
-    return;
-  }
-  fProduk.disabled = false;
-  fProduk.appendChild(new Option('Pilih…',''));
-  (QC_DATA.produk[fMesin.value] || []).forEach(p=>{
-    fProduk.appendChild(new Option(p, p));
-  });
-});
-
-// ---------- timestamp / shift readout ----------
-const fTimestamp = document.getElementById('fTimestamp');
-const shiftReadout = document.getElementById('shiftReadout');
-const shiftDot = document.getElementById('shiftDot');
-const shiftColors = {'1':'var(--amber)','2':'var(--dusk)','3':'var(--night-2)'};
-
-function refreshShiftReadout(){
-  if (!fTimestamp.value){ shiftReadout.textContent='–'; return; }
-  const d = parseWIBInputValue(fTimestamp.value);
-  const s = calcShift(d);
-  shiftReadout.textContent = 'Shift ' + s;
-  shiftDot.style.background = shiftColors[s];
-}
-fTimestamp.value = toLocalInputValue(new Date());
-fTimestamp.addEventListener('input', refreshShiftReadout);
-refreshShiftReadout();
-
-// ---------- Google Sheets connection ----------
-const CONFIG_KEY = 'qc_config:sheet_webapp_url';
-
-// Isi URL Web App Apps Script Anda di sini agar semua pengguna form ini
-// otomatis tersambung tanpa perlu menempel URL secara manual.
-// Contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
-const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxA2YXTbQQVryWVdgyg7Bh_Fwr2nyCd2cUELK0WWLu6f9UYH-Yhh3PC6xRIVqdt_GCuqQ/exec';
-
-let sheetWebAppUrl = DEFAULT_WEBAPP_URL;
-
-const connBadge = document.getElementById('connBadge');
-const connBadgeText = document.getElementById('connBadgeText');
-const connDetailDot = document.getElementById('connDetailDot');
-const connDetailText = document.getElementById('connDetailText');
-const settingsCard = document.getElementById('settingsCard');
-const fWebAppUrl = document.getElementById('fWebAppUrl');
-
-document.getElementById('settingsHead').addEventListener('click', ()=>{
-  settingsCard.classList.toggle('open');
-});
-connBadge.addEventListener('click', ()=>{
-  settingsCard.classList.add('open');
-  fWebAppUrl.focus();
-});
-
-function setConnUi(state, text, detailText){
-  // state: 'connected' | 'error' | 'idle'
-  connBadge.classList.remove('connected','error');
-  if (state !== 'idle') connBadge.classList.add(state);
-  connBadgeText.textContent = text;
-  connDetailDot.style.background = state==='connected' ? '#2E7D4F' : state==='error' ? '#C13B2E' : '#9AA3AC';
-  connDetailText.textContent = detailText;
-}
-
-async function loadConfig(){
-  // 1) Coba pakai URL bawaan (hardcoded) dulu, supaya form langsung siap
-  //    dipakai walau dibuka sebagai file berdiri sendiri (di luar chat Claude),
-  //    di mana window.storage mungkin tidak tersedia.
-  if (DEFAULT_WEBAPP_URL){
-    sheetWebAppUrl = DEFAULT_WEBAPP_URL;
-    fWebAppUrl.value = DEFAULT_WEBAPP_URL;
-    setConnUi('idle', 'Google Sheets: URL bawaan aktif', 'Menggunakan URL Web App bawaan. Klik "Tes Koneksi" untuk memastikan sheet dapat dihubungi.');
-  }
-
-  // 2) Kalau ada URL lain yang pernah disimpan lewat panel pengaturan
-  //    (dan form ini dibuka lewat Claude / lingkungan yang mendukung window.storage),
-  //    itu akan menimpa URL bawaan di atas.
-  try{
-    const r = await storageGet(CONFIG_KEY, true);
-    if (r && r.value){
-      sheetWebAppUrl = r.value;
-      fWebAppUrl.value = sheetWebAppUrl;
-      setConnUi('idle', 'Google Sheets: URL tersimpan', 'URL tersimpan. Klik "Tes Koneksi" untuk memastikan sheet dapat dihubungi.');
-    } else if (!DEFAULT_WEBAPP_URL){
-      setConnUi('idle', 'Google Sheets: belum disambungkan', 'Belum ada URL tersimpan.');
-    }
-  }catch(e){
-    if (!DEFAULT_WEBAPP_URL){
-      setConnUi('idle', 'Google Sheets: belum disambungkan', 'Belum ada URL tersimpan.');
-    }
-  }
-}
-
-document.getElementById('saveConfigBtn').addEventListener('click', async ()=>{
-  const url = fWebAppUrl.value.trim();
-  if (!url || !/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){
-    setConnUi('error', 'Google Sheets: URL tidak valid', 'URL harus berupa link Web App dari Google Apps Script (diawali https://script.google.com/…).');
-    return;
-  }
-  try{
-    await storageSet(CONFIG_KEY, url, true);
-    sheetWebAppUrl = url;
-    setConnUi('idle', 'Google Sheets: URL tersimpan', 'Tersimpan. Klik "Tes Koneksi" untuk memastikan sheet dapat dihubungi.');
-  }catch(e){
-    setConnUi('error', 'Google Sheets: gagal menyimpan', 'Gagal menyimpan URL, coba lagi.');
-  }
-});
-
-document.getElementById('testConfigBtn').addEventListener('click', async ()=>{
-  const url = fWebAppUrl.value.trim() || sheetWebAppUrl;
-  if (!url){ setConnUi('error','Google Sheets: belum disambungkan','Isi URL Web App terlebih dahulu.'); return; }
-  const btn = document.getElementById('testConfigBtn');
-  btn.disabled = true; btn.textContent = 'Menguji…';
-  try{
-    const res = await fetch(url, { method:'GET' });
-    const json = await res.json().catch(()=>null);
-    if (res.ok && json && json.status === 'ok'){
-      setConnUi('connected', 'Google Sheets: terhubung', 'Koneksi berhasil — laporan baru akan otomatis masuk ke sheet INPUT.');
-    } else {
-      setConnUi('error', 'Google Sheets: respons tidak dikenali', 'Endpoint merespons tapi format tidak sesuai. Periksa script doGet().');
-    }
-  }catch(e){
-    console.error('test connection error', e);
-    setConnUi('error', 'Google Sheets: gagal terhubung', 'Tidak bisa menghubungi URL ini. Pastikan Web App di-deploy dengan akses "Anyone", dan buka form ini di luar pratinjau chat (unduh & buka file-nya) karena pratinjau dalam chat membatasi koneksi keluar.');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Tes Koneksi';
-  }
-});
-
-async function pushToSheet(entry){
-  if (!sheetWebAppUrl) return false;
-  try{
-    const res = await fetch(sheetWebAppUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(entry)
-    });
-    const json = await res.json().catch(()=>null);
-    if (res.ok && json && json.status === 'ok'){
-      setConnUi('connected', 'Google Sheets: terhubung', 'Laporan terakhir berhasil masuk ke sheet INPUT.');
-      return true;
-    }
-    setConnUi('error', 'Google Sheets: gagal mengirim', (json && json.message) || 'Sheet menolak data yang dikirim.');
-    return false;
-  }catch(e){
-    console.error('pushToSheet error', e);
-    setConnUi('error', 'Google Sheets: gagal mengirim', 'Tidak bisa menghubungi Google Sheets. Data tetap tersimpan lokal di form ini.');
-    return false;
-  }
-}
-
-// ---------- Laporan shift sebelumnya (baca langsung dari Google Sheets) ----------
-function getPreviousShiftRange(now){
-  const p = getWIBParts(now); // tanggal "hari ini" ditentukan berdasarkan kalender WIB
-  const shift = calcShift(now);
-  let start, end, label;
-
-  if (shift === '1'){
-    // sekarang shift 1 (06:00–14:00 WIB) -> sebelumnya shift 3 (22:00 kemarin – 06:00 hari ini WIB)
-    start = wibDateUTC(p.year, p.month, p.day - 1, 22, 0);
-    end = wibDateUTC(p.year, p.month, p.day, 6, 0);
-    label = 'Shift 3 · ' + fmtDisplay(start) + ' – ' + fmtDisplay(end);
-  } else if (shift === '2'){
-    // sekarang shift 2 (14:00–22:00 WIB) -> sebelumnya shift 1 (06:00–14:00 hari ini WIB)
-    start = wibDateUTC(p.year, p.month, p.day, 6, 0);
-    end = wibDateUTC(p.year, p.month, p.day, 14, 0);
-    label = 'Shift 1 · ' + fmtDisplay(start) + ' – ' + fmtDisplay(end);
-  } else {
-    // sekarang shift 3 (22:00–06:00 WIB) -> sebelumnya shift 2 (14:00–22:00 hari ini WIB)
-    start = wibDateUTC(p.year, p.month, p.day, 14, 0);
-    end = wibDateUTC(p.year, p.month, p.day, 22, 0);
-    label = 'Shift 2 · ' + fmtDisplay(start) + ' – ' + fmtDisplay(end);
-  }
-  return { start, end, label };
-}
-
-async function loadPreviousShift(){
-  const listEl = document.getElementById('prevShiftList');
-  const labelEl = document.getElementById('prevShiftRangeLabel');
-  const countEl = document.getElementById('prevShiftCountPill');
-  const { start, end, label } = getPreviousShiftRange(new Date());
-  labelEl.textContent = label;
-
-  if (!sheetWebAppUrl){
-    listEl.innerHTML = '<div class="empty">Belum tersambung ke Google Sheets.<br>Atur URL Web App di panel pengaturan pada bagian atas halaman.</div>';
-    countEl.textContent = '0';
-    renderShiftSummary([], label);
-    return;
-  }
-
-  listEl.innerHTML = '<div class="loading">Memuat laporan shift sebelumnya…</div>';
-  const url = sheetWebAppUrl + '?action=shiftData&start=' + encodeURIComponent(start.toISOString()) + '&end=' + encodeURIComponent(end.toISOString());
-
-  try{
-    const res = await fetch(url, { method:'GET' });
-    const json = await res.json().catch(()=>null);
-    if (!res.ok || !json || json.status !== 'ok'){
-      listEl.innerHTML = '<div class="empty">Gagal memuat data. ' + escapeHtml((json && json.message) || 'Periksa koneksi Google Sheets.') + '</div>';
-      countEl.textContent = '0';
-      renderShiftSummary([], label);
-      return;
-    }
-    const list = json.data || [];
-    countEl.textContent = list.length;
-    renderShiftSummary(list, label);
-    if (list.length === 0){
-      listEl.innerHTML = '<div class="empty">Belum ada laporan pada shift ini.</div>';
-      return;
-    }
-    listEl.innerHTML = list.map(e=>{
-      const d = new Date(e.timestamp);
-      const shiftClass = 'shift'+e.shift;
-      return `<div class="entry">
-        <div class="entry-top">
-          <div class="entry-tags">
-            <span class="tag">${escapeHtml(e.divisi)}</span>
-            <span class="tag">${escapeHtml(e.mesin)}</span>
-            <span class="tag">${escapeHtml(e.produk)}</span>
-            <span class="tag ${shiftClass}">SHIFT ${escapeHtml(e.shift)}</span>
-          </div>
-          <div class="entry-actions">
-            <button class="btn-copy" data-copyps="1" title="Salin sebagai teks">⧉ Salin</button>
-          </div>
-        </div>
-        <div class="entry-body">
-          <div><b>Temuan:</b> ${escapeHtml(e.temuan) || '–'}</div>
-          <div><b>Solusi:</b> ${escapeHtml(e.solusi) || '–'}</div>
-        </div>
-        <div class="entry-meta">
-          <span>Operator: ${escapeHtml(e.operator)||'–'} · QC: ${escapeHtml(e.ttdQc)||'–'}</span>
-          <span>${fmtDisplay(d)}</span>
-        </div>
-      </div>`;
-    }).join('');
-
-    listEl.querySelectorAll('[data-copyps]').forEach((btn, idx)=>{
-      btn.addEventListener('click', ()=> copyEntryText(list[idx], btn));
-    });
-  }catch(e){
-    console.error('loadPreviousShift error', e);
-    listEl.innerHTML = '<div class="empty">Tidak bisa menghubungi Google Sheets. Coba klik Muat Ulang.</div>';
-    countEl.textContent = '0';
-  }
-}
-
-document.getElementById('refreshPrevShiftBtn').addEventListener('click', loadPreviousShift);
-
-// ---------- storage ----------
-const STORAGE_PREFIX = 'qc_input:';
-let entries = []; // {id, divisi, mesin, produk, temuan, solusi, operator, ttdQc, timestamp, shift}
-
-async function loadEntries(){
-  const logList = document.getElementById('logList');
-  try{
-    const listRes = await storageList(STORAGE_PREFIX, true);
-    const keys = (listRes && listRes.keys) || [];
-    const results = await Promise.all(keys.map(async k=>{
-      try{
-        const r = await storageGet(k, true);
-        return r ? JSON.parse(r.value) : null;
-      }catch(e){ return null; }
-    }));
-    entries = results.filter(Boolean).sort((a,b)=> new Date(b.timestamp) - new Date(a.timestamp));
-    renderLog();
-  }catch(e){
-    logList.innerHTML = '<div class="empty">Gagal memuat riwayat laporan. Coba muat ulang halaman.</div>';
-    console.error('loadEntries error', e);
-  }
-}
-
-function renderLog(){
-  const logList = document.getElementById('logList');
-  document.getElementById('countPill').textContent = entries.length;
-  if (entries.length === 0){
-    logList.innerHTML = '<div class="empty">Belum ada laporan tersimpan.<br>Isi form di sebelah kiri untuk mulai mencatat.</div>';
-    return;
-  }
-  logList.innerHTML = entries.map(e=>{
-    const d = new Date(e.timestamp);
-    const shiftClass = 'shift'+e.shift;
-    return `<div class="entry" data-id="${escapeHtml(e.id)}">
-      <div class="entry-top">
-        <div class="entry-tags">
-          <span class="tag">${escapeHtml(e.divisi)}</span>
-          <span class="tag">${escapeHtml(e.mesin)}</span>
-          <span class="tag">${escapeHtml(e.produk)}</span>
-          <span class="tag ${shiftClass}">SHIFT ${escapeHtml(e.shift)}</span>
-          ${e.synced ? '<span class="tag" style="color:var(--ok); border-color:#BEE0CC; background:#E7F3EC;">✓ Sheets</span>' : '<span class="tag" style="color:var(--ink-soft);">⏺ Lokal saja</span>'}
-        </div>
-        <div class="entry-actions">
-          <button class="btn-copy" data-copy="${escapeHtml(e.id)}" title="Salin sebagai teks">⧉ Salin</button>
-          <button class="btn-danger-ghost" data-del="${escapeHtml(e.id)}" title="Hapus">✕</button>
-        </div>
-      </div>
-      <div class="entry-body">
-        <div><b>Temuan:</b> ${escapeHtml(e.temuan) || '–'}</div>
-        <div><b>Solusi:</b> ${escapeHtml(e.solusi) || '–'}</div>
-      </div>
-      <div class="entry-meta">
-        <span>Operator: ${escapeHtml(e.operator)||'–'} · QC: ${escapeHtml(e.ttdQc)||'–'}</span>
-        <span>${fmtDisplay(d)}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  logList.querySelectorAll('[data-del]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      const id = btn.getAttribute('data-del');
-      btn.disabled = true;
-      try{
-        await storageDelete(STORAGE_PREFIX+id, true);
-        entries = entries.filter(x=>x.id!==id);
-        renderLog();
-      }catch(e){
-        console.error('delete error', e);
-        btn.disabled = false;
-      }
-    });
-  });
-
-  logList.querySelectorAll('[data-copy]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const id = btn.getAttribute('data-copy');
-      const e = entries.find(x=>x.id===id);
-      if (!e) return;
-      copyEntryText(e, btn);
-    });
-  });
-}
-
-function entryToText(e){
-  const d = new Date(e.timestamp);
-  return [
-    `LAPORAN QC`,
-    `Divisi        : ${e.divisi}`,
-    `Mesin         : ${e.mesin}`,
-    `Produk        : ${e.produk}`,
-    `Temuan        : ${e.temuan || '-'}`,
-    `Solusi        : ${e.solusi || '-'}`,
-    `Operator Mesin: ${e.operator || '-'}`,
-    `TTD QC        : ${e.ttdQc || '-'}`,
-    `Waktu         : ${fmtDisplay(d)}`,
-    `Shift         : ${e.shift}`,
-    `Status        : ${e.synced ? 'Tersinkron ke Google Sheets' : 'Tersimpan lokal'}`
-  ].join('\n');
-}
-
-async function copyPlainText(text, btn){
-  const originalLabel = btn.textContent;
-  try{
-    if (navigator.clipboard && window.isSecureContext){
-      await navigator.clipboard.writeText(text);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.focus(); ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
-    btn.textContent = '✓ Disalin';
-    btn.classList.add('copied');
-  }catch(err){
-    console.error('copy error', err);
-    btn.textContent = 'Gagal salin';
-  }finally{
-    setTimeout(()=>{
-      btn.textContent = originalLabel;
-      btn.classList.remove('copied');
-    }, 1800);
-  }
-}
-
-async function copyEntryText(e, btn){
-  await copyPlainText(entryToText(e), btn);
-}
-
-// ---------- rangkuman shift (untuk disalin ke WhatsApp) ----------
-function buildShiftSummaryText(list, rangeLabel){
-  const lines = [];
-  lines.push('*RANGKUMAN LAPORAN QC*');
-  lines.push(rangeLabel);
-  lines.push('Total laporan: ' + list.length);
-  lines.push('');
-
-  if (list.length === 0){
-    lines.push('Tidak ada laporan pada shift ini.');
-    return lines.join('\n');
-  }
-
-  const divisiOrder = ['LOKAL','EXPORT','PRINTING'];
-  const grouped = {};
-  list.forEach(e=>{
-    grouped[e.divisi] = grouped[e.divisi] || {};
-    grouped[e.divisi][e.mesin] = grouped[e.divisi][e.mesin] || [];
-    grouped[e.divisi][e.mesin].push(e);
-  });
-
-  const divisiKeys = Object.keys(grouped).sort((a,b)=>{
-    const ia = divisiOrder.indexOf(a), ib = divisiOrder.indexOf(b);
-    return (ia<0?99:ia) - (ib<0?99:ib);
-  });
-
-  divisiKeys.forEach(div=>{
-    lines.push('*'+div+'*');
-    const mesinKeys = Object.keys(grouped[div]).sort();
-    mesinKeys.forEach(mesin=>{
-      grouped[div][mesin].forEach(e=>{
-        let line = '• ' + mesin + ' (' + e.produk + '): ' + (e.temuan || '-');
-        if (e.solusi) line += ' → ' + e.solusi;
-        lines.push(line);
-        lines.push('Operator: ' + (e.operator || '-'));
-      });
-    });
-    lines.push('');
-  });
-
-  const qcs = [...new Set(list.map(e=>e.ttdQc).filter(Boolean))];
-  lines.push('QC: ' + (qcs.join(', ') || '-'));
-
-  return lines.join('\n').trim();
-}
-
-function renderShiftSummary(list, rangeLabel){
-  const pre = document.getElementById('summaryPreview');
-  const text = buildShiftSummaryText(list, rangeLabel);
-  pre.textContent = text;
-}
-
-document.getElementById('copySummaryBtn').addEventListener('click', function(){
-  const text = document.getElementById('summaryPreview').textContent;
-  if (!text){ return; }
-  copyPlainText(text, this);
-});
-
-// ---------- submit ----------
-const statusMsg = document.getElementById('statusMsg');
-function showStatus(msg, ok){
-  statusMsg.textContent = msg;
-  statusMsg.className = 'status-msg ' + (ok ? 'ok':'err');
-  setTimeout(()=>{ statusMsg.className='status-msg'; }, 4000);
-}
-
-const fTemuan = document.getElementById('fTemuan');
-const fSolusi = document.getElementById('fSolusi');
-const fOperator = document.getElementById('fOperator');
-const fTtdQc = document.getElementById('fTtdQc');
-const confirmOverlay = document.getElementById('confirmOverlay');
-let pendingEntry = null;
-
-function validateForm(){
-  if (!fDivisi.value || !fMesin.value || !fProduk.value){
-    showStatus('Lengkapi Divisi, Mesin, dan Produk terlebih dahulu.', false); return false;
-  }
-  if (!fTemuan.value.trim()){
-    showStatus('Kolom Temuan wajib diisi.', false); return false;
-  }
-  if (!fOperator.value.trim() || !fTtdQc.value.trim()){
-    showStatus('Operator Mesin dan TTD QC wajib diisi.', false); return false;
-  }
-  if (!fTimestamp.value){
-    showStatus('Timestamp wajib diisi.', false); return false;
-  }
-  return true;
-}
-
-document.getElementById('submitBtn').addEventListener('click', ()=>{
-  if (!validateForm()) return;
-
-  const d = parseWIBInputValue(fTimestamp.value);
-  pendingEntry = {
-    id: Date.now() + '_' + Math.random().toString(36).slice(2,8),
-    divisi: fDivisi.value,
-    mesin: fMesin.value,
-    produk: fProduk.value,
-    temuan: fTemuan.value.trim(),
-    solusi: fSolusi.value.trim(),
-    operator: fOperator.value.trim(),
-    ttdQc: fTtdQc.value.trim(),
-    timestamp: d.toISOString(),
-    shift: calcShift(d)
-  };
-
-  // fill confirmation modal
-  document.getElementById('cfDivisi').textContent = pendingEntry.divisi;
-  document.getElementById('cfMesin').textContent = pendingEntry.mesin;
-  document.getElementById('cfProduk').textContent = pendingEntry.produk;
-  document.getElementById('cfTemuan').textContent = pendingEntry.temuan;
-  document.getElementById('cfSolusi').textContent = pendingEntry.solusi || '-';
-  document.getElementById('cfOperator').textContent = pendingEntry.operator;
-  document.getElementById('cfTtdQc').textContent = pendingEntry.ttdQc;
-  document.getElementById('cfTimestamp').textContent = fmtDisplay(d);
-  document.getElementById('cfShift').textContent = 'Shift ' + pendingEntry.shift;
-
-  confirmOverlay.classList.add('open');
-});
-
-document.getElementById('cfCancel').addEventListener('click', ()=>{
-  confirmOverlay.classList.remove('open');
-  pendingEntry = null;
-});
-confirmOverlay.addEventListener('click', (ev)=>{
-  if (ev.target === confirmOverlay){ confirmOverlay.classList.remove('open'); pendingEntry = null; }
-});
-
-document.getElementById('cfConfirm').addEventListener('click', async ()=>{
-  if (!pendingEntry) return;
-  const entry = pendingEntry;
-  const cfBtn = document.getElementById('cfConfirm');
-  cfBtn.disabled = true; cfBtn.textContent = 'Menyimpan…';
-  try{
-    const res = await storageSet(STORAGE_PREFIX+entry.id, JSON.stringify(entry), true);
-    if (!res) throw new Error('empty response');
-
-    // attempt to push to connected Google Sheet (non-blocking for local save)
-    const synced = await pushToSheet(entry);
-    entry.synced = synced;
-    await storageSet(STORAGE_PREFIX+entry.id, JSON.stringify(entry), true);
-
-    entries.unshift(entry);
-    renderLog();
-    showStatus(synced ? 'Laporan tersimpan & masuk ke Google Sheets.' : 'Laporan tersimpan lokal (belum masuk Google Sheets).', true);
-
-    // reset form (keep divisi/mesin for faster consecutive entries on same line)
-    fTemuan.value=''; fSolusi.value=''; fOperator.value=''; fTtdQc.value='';
-    fTimestamp.value = toLocalInputValue(new Date());
-    refreshShiftReadout();
-    confirmOverlay.classList.remove('open');
-  }catch(e){
-    console.error('submit error', e);
-    showStatus('Gagal menyimpan laporan. Coba lagi.', false);
-  }finally{
-    cfBtn.disabled = false; cfBtn.textContent = 'Ya, Simpan';
-    pendingEntry = null;
-  }
-});
-
-// ---------- export CSV ----------
-document.getElementById('exportBtn').addEventListener('click', ()=>{
-  if (entries.length === 0){ showStatus('Belum ada data untuk diekspor.', false); return; }
-  const header = ['DIVISI','MESIN','PRODUK','TEMUAN','SOLUSI','OPERATOR MESIN','TTD QC','TIMESTAMP (WIB)','SHIFT'];
-  const sorted = [...entries].sort((a,b)=> new Date(a.timestamp)-new Date(b.timestamp));
-  const rows = sorted.map(e=>{
-    const d = new Date(e.timestamp);
-    const p = getWIBParts(d);
-    const ts = p.year+'-'+pad(p.month)+'-'+pad(p.day)+' '+pad(p.hour)+':'+pad(p.minute)+':'+pad(p.second);
-    return [e.divisi,e.mesin,e.produk,e.temuan,e.solusi,e.operator,e.ttdQc,ts,e.shift].map(csvEscape).join(',');
-  });
-  const csv = [header.join(','), ...rows].join('\n');
-  const blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'laporan_qc_' + new Date().toISOString().slice(0,10) + '.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
-
-// ---------- init ----------
-(async ()=>{
-  await loadConfig();
-  loadEntries();
-  loadPreviousShift();
 })();
 </script>
-</body>
-</html>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+.lh-app{
+--bg:#14171c; --surface:#1c2027; --surface2:#242933; --surface3:#2c3240;
+--border:#3d4658; --text:#f5f6f8; --muted:#c3cbda; --muted2:#9aa2b5;
+--p1:#f2a93b; --p2:#3fa796; --p3:#9186e0; --p4:#e8607a; --sp:#5b96c9;
+--good:#4caf7d; --bad:#e0616f; --warn:#e0b34c;
+font-family:'Inter',sans-serif; color:var(--text); background:var(--bg);
+border-radius:14px; overflow:hidden; max-width:900px; margin:0 auto;
+-webkit-text-size-adjust:100%; text-size-adjust:100%;
+}
+.lh-app *{box-sizing:border-box;}
+.lh-app button, .lh-app a{-webkit-tap-highlight-color:rgba(91,150,201,0.25);}
+@media(max-width:480px){
+.lh-app{border-radius:0;}
+}
+.lh-head{padding:20px 22px 16px; background:linear-gradient(180deg,#191d24,#14171c); border-bottom:1px solid var(--border);}
+@media(max-width:480px){.lh-head{padding:16px 14px 14px;}}
+.lh-head h1{font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin:0 0 2px;}
+.lh-head p{margin:0; color:var(--muted); font-size:12.5px;}
+.lh-setup{
+margin:12px 22px 0; padding:12px 14px; background:#241f14; border:1px solid #4a3c1f; border-radius:10px;
+font-size:12px; color:#e0c48c; line-height:1.6;
+}
+@media(max-width:480px){.lh-setup{margin:10px 14px 0;}}
+.lh-setup input{
+width:100%; margin-top:8px; background:#14171c; border:1px solid #4a3c1f; color:var(--text);
+padding:10px 10px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:11.5px; min-height:42px;
+}
+@media(max-width:640px){.lh-setup input{font-size:16px;}}
+.lh-tabs{display:flex; gap:6px; padding:14px 22px 0; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+@media(max-width:480px){.lh-tabs{padding:12px 14px 0; gap:4px;}}
+.lh-tab{
+flex:0 0 auto; display:flex; align-items:center; gap:7px; cursor:pointer;
+padding:9px 14px; border-radius:9px 9px 0 0; font-size:12.5px; font-weight:600;
+color:var(--muted); background:transparent; border:1px solid transparent; border-bottom:none;
+font-family:'Space Grotesk',sans-serif; min-height:40px;
+}
+@media(max-width:480px){.lh-tab{padding:9px 11px; font-size:11.5px;}}
+.lh-tab .dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);}
+.lh-tab.active{background:var(--surface); color:var(--text); border-color:var(--border);}
+.lh-tab.active .dot{background:var(--accent);}
+.lh-body{background:var(--surface); padding:20px 22px 26px;}
+@media(max-width:480px){.lh-body{padding:16px 14px 22px;}}
+.lh-section-title{font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:700; letter-spacing:1.2px; color:var(--accent); text-transform:uppercase; margin:22px 0 10px;}
+.lh-section-title:first-child{margin-top:0;}
+.lh-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.lh-grid.g2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:640px){.lh-grid{grid-template-columns:repeat(2,1fr);} .lh-grid.g2{grid-template-columns:1fr;}}
+@media(max-width:420px){.lh-grid{grid-template-columns:1fr; gap:8px;}}
+.lh-field label{display:block; font-size:11px; font-weight:600; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;}
+.lh-field input[type=text], .lh-field input[type=number], .lh-field input[type=date], .lh-field select, .lh-field textarea{
+width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text);
+padding:10px 11px; border-radius:8px; font-size:14px; outline:none; min-height:44px;
+}
+.lh-field textarea{resize:vertical; min-height:56px;}
+.lh-field input::placeholder, .lh-field textarea::placeholder, .lh-setup input::placeholder{
+color:#7c8497; opacity:1;
+}
+@media(max-width:640px){
+.lh-field input[type=text], .lh-field input[type=number], .lh-field input[type=date],
+.lh-field select, .lh-field textarea{ font-size:16px; }
+}
+.lh-shift{display:flex; gap:8px;}
+.lh-shift button{flex:1; padding:10px 0; min-height:44px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; cursor:pointer;}
+.lh-shift button.active{background:var(--accent); border-color:var(--accent); color:#14171c;}
+.lh-counter{background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px;}
+.lh-counter-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; flex-wrap:wrap;}
+.lh-counter-head .name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px;}
+.lh-counter-head .name .tag{color:var(--accent);}
+.lh-counter-head .pakai{font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; background:var(--surface3); padding:3px 9px; border-radius:20px; white-space:nowrap;}
+.lh-counter-row{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.lh-counter-row .lh-field label{font-size:9.5px;}
+.lh-counter-row input{font-family:'JetBrains Mono',monospace; text-align:center; font-weight:600; min-height:42px;}
+@media(max-width:640px){.lh-counter-row input{font-size:16px; padding:8px 4px;}}
+.lh-btn{border:none; border-radius:9px; padding:12px 18px; min-height:44px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;}
+.lh-btn-primary{background:var(--accent); color:#14171c; width:100%; padding:14px; font-size:14.5px; margin-top:18px;}
+.lh-btn-connect{background:var(--accent, #5b96c9); color:#0d1117; width:100%;}
+.lh-btn-connect:disabled{opacity:.6;}
+#connectStatus.status-ok{color:#9adfb3;}
+#connectStatus.status-err{color:#e0616f;}
+#connectStatus.status-warn{color:#e0b34c;}
+.lh-btn:disabled{opacity:.5; cursor:default;}
+.lh-log{margin-top:26px;}
+.lh-log-empty{color:var(--muted2); font-size:13px; padding:18px 0; text-align:center;}
+.lh-entry{border:1px solid var(--border); background:var(--surface2); border-radius:10px; padding:12px 14px; margin-bottom:8px;}
+.lh-entry .meta{font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:3px;}
+.lh-entry .main{font-size:13.5px; font-weight:600;}
+.lh-entry .sub{font-size:12px; color:var(--muted); margin-top:3px;}
+.lh-toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:#20252d; color:var(--text); border:1px solid var(--border); padding:10px 18px; border-radius:30px; font-size:13px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.4); z-index:999; opacity:0; pointer-events:none; transition:opacity .25s;}
+.lh-toast.show{opacity:1;}
+.lh-note{font-size:11.5px; color:var(--muted2); margin-top:8px; line-height:1.5;}
+datalist{display:none;}
+.lh-modal-overlay{position:fixed; inset:0; background:rgba(6,7,9,0.85); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px;}
+.lh-modal-overlay.show{display:flex;}
+.lh-modal-card{
+background:#ffffff; border:1px solid #d8dce3; border-top:4px solid var(--accent);
+border-radius:14px; max-width:440px; width:100%; padding:24px; max-height:85vh; overflow-y:auto;
+box-shadow:0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.02);
+}
+.lh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; margin-bottom:16px; display:flex; align-items:center; gap:8px; color:#111111;}
+.lh-modal-body{font-size:14.5px; line-height:1.9; color:#111111;}
+.lh-modal-body .row{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:7px 0; border-bottom:1px solid #e5e7eb;}
+.lh-modal-body .row:last-child{border-bottom:none;}
+.lh-modal-body .row .k{color:#333333; flex:0 0 auto; font-size:12.5px; font-weight:600; text-transform:uppercase; letter-spacing:.3px;}
+.lh-modal-body .row .v{font-weight:700; text-align:right; color:#000000; font-size:14.5px;}
+.lh-modal-actions{display:flex; gap:10px; margin-top:20px;}
+.lh-modal-actions .lh-btn{flex:1; margin-top:0; min-height:48px; font-size:14px;}
+.lh-modal-actions .lh-btn-ghost{background:#e0393f; color:#ffffff; border:1px solid #c62d33; box-shadow:0 4px 14px rgba(224,57,63,0.3);}
+.lh-modal-actions .lh-btn-primary{background:#2fa84f; color:#ffffff; box-shadow:0 4px 14px rgba(47,168,79,0.35);}
+</style>
+
+<div class="lh-modal-overlay" id="lhModalOverlay">
+<div class="lh-modal-card">
+<div class="lh-modal-title">📋 Konfirmasi Laporan</div>
+<div class="lh-modal-body" id="lhModalBody"></div>
+<div class="lh-modal-actions">
+<button type="button" class="lh-btn lh-btn-ghost" id="lhModalCancel">Batal, Periksa Lagi</button>
+<button type="button" class="lh-btn lh-btn-primary" id="lhModalConfirm" style="margin-top:0">Ya, Kirim Laporan</button>
+</div>
+</div>
+</div>
+
+<div class="lh-app" id="lhApp">
+<div class="lh-head">
+<h1>Laporan Produksi &amp; Sparepart</h1>
+<p>Versi master &middot; 1 link form untuk semua bulan &middot; tinggal ganti ID spreadsheet tiap bulan &middot; warna tinta otomatis</p>
+</div>
+<div class="lh-setup" id="lhSetup" style="display:none">
+⚠️ Perlu dihubungkan sebelum mulai (lihat AppsScript_Code_MASTER.gs untuk cara deploy):
+<input type="text" id="scriptUrlInput" placeholder="URL Web App Apps Script (permanen, sekali isi) — https://script.google.com/macros/s/xxxxx/exec">
+<input type="text" id="sheetIdInput" placeholder="Link atau ID Spreadsheet BULAN INI — ganti tiap bulan" style="margin-top:8px">
+<button type="button" class="lh-btn lh-btn-connect" id="btnConnect" style="margin-top:10px">Hubungkan</button>
+<div id="connectStatus" style="margin-top:8px; font-size:12px; display:none"></div>
+</div>
+<div class="lh-setup" id="lhSetupOk" style="display:none; background:#14241a; border-color:#2f5c3f; color:#9adfb3">
+<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+<div>
+<span style="font-size:15px">✅</span> Terhubung ke spreadsheet
+<div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14.5px; color:#eafff0; margin-top:2px" id="activeSheetName">-</div>
+<div style="font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#7ec99a; margin-top:2px" id="activeSheetId"></div>
+</div>
+<a href="#" id="changeSheetLink" style="color:#9adfb3; text-decoration:underline; font-size:12px; white-space:nowrap">ganti koneksi</a>
+</div>
+</div>
+<div class="lh-tabs" id="lhTabs"></div>
+<div class="lh-body" id="lhBody"><div style="padding:40px 0;text-align:center;color:var(--muted)">Memuat…</div></div>
+</div>
+<div class="lh-toast" id="lhToast"></div>
+
+<script>
+(function(){
+
+// ================== KONFIGURASI ==================
+// 1) URL Web App Apps Script MASTER Anda -- isi SEKALI, berlaku selamanya untuk semua bulan.
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdnrvde_N5Thg34E3c8_OFu0fe11ebc27W5TVyRaXmFOVdCpL81LGrgSPhRqBpwEI_3A/exec";
+// 2) ID spreadsheet bulan ini -- default di bawah bisa dikosongkan/diganti tiap bulan
+//    lewat kotak di form, atau dengan membuka file ini dengan ?sheet=ID_SPREADSHEET di URL.
+var SPREADSHEET_ID = "1MCEBIi-nvo0OykW6wwLoRQtm-6cIEJDW6wjevVXn3L0";
+// ==================================================
+
+function extractSheetId(input){
+if(!input) return "";
+var m = input.match(/\/d\/([a-zA-Z0-9-_]+)/);
+if(m) return m[1];
+return input.trim();
+}
+function getUrlParam(name){
+try{
+var params = new URLSearchParams(window.location.search);
+return params.get(name);
+}catch(e){ return null; }
+}
+
+var MACHINES = ['INP1','INP2','INP3','INP4'];
+var META = {
+INP1:{label:'Mesin 1', short:'M1', color:'#f2a93b'},
+INP2:{label:'Mesin 2', short:'M2', color:'#3fa796'},
+INP3:{label:'Mesin 3', short:'M3', color:'#9186e0'},
+INP4:{label:'Mesin 4', short:'M4', color:'#e8607a'},
+SPAREPART:{label:'Sparepart', short:'SP', color:'#5b96c9'}
+};
+
+var PRODUCTS = {
+  "BOLA MERAH": {types:["150","200"], colors:["RED"]},
+  "ASIA CROFFLE": {types:["22s"], colors:["ORANGE","PINK"]},
+  "LETS TAKE COFFEE": {types:["200"], colors:["BROWN","GOLD"]},
+  "ICE TEA": {types:["16oz","22s"], colors:["WHITE","YELLOW","GREEN","OLD GREEN"]},
+  "TEA RAS": {types:["22s"], colors:["YELLOW","GREEN","BLACK"]},
+  "HOTWAYS": {types:["22s"], colors:["YELLOW","RED","WHITE"]},
+  "RASRMD": {types:["22s"], colors:["YELLOW","OLD GREEN","WHITE"]},
+  "ES DEGAN": {types:["22s","22b"], colors:["GREEN","OLD GREEN","WHITE"]},
+  "BOLA MERAH": {types:["150ml","200ml"], colors:["RED"]},
+  "ASIA CROFFLE": {types:["22slim"], colors:["ORANGE","PINK"]},
+  "LETS TAKE COFFEE": {types:["200ml"], colors:["BROWN","GOLD"]},
+  "ICE TEA": {types:["16oz","22slim"], colors:["WHITE","YELLOW","GREEN","OLD GREEN"]},
+  "TEA RAS": {types:["22slim"], colors:["YELLOW","GREEN","BLACK"]},
+  "HOTWAYS": {types:["22slim"], colors:["YELLOW","RED","WHITE"]},
+  "RASRMD": {types:["22slim"], colors:["YELLOW","OLD GREEN","WHITE"]},
+  "ES DEGAN": {types:["22slim","22BIG"], colors:["GREEN","OLD GREEN","WHITE"]},
+"COFFEE": {types:["16oz"], colors:["D.CHOCO","CHOCO","CREAM","RED","WHITE","SKIN"]},
+  "I JUICE": {types:["16oz","22s"], colors:["YELLOW","ORANGE","RED","GREEN","BLACK","WHITE"]},
+  "HBD": {types:["22s"], colors:["L.RED","RED","L.BLUE","D.BLUE","YELLOW","GREEN","D.GREEN"]},
+  "WALDO": {types:["12n"], colors:["BLACK","BROWN","ORANGE"]},
+  "KRISTAL": {types:["14u"], colors:["BLACK","RED","YELLOW"]},
+  "JERUK PERAS": {types:["22s"], colors:["BLACK","GREEN","ORANGE"]},
+  "SUSU SAPI BLUE": {types:["150"], colors:["BLACK","GREY","RED","CREAM","OLD BLUE","BLUE"]},
+  "SUSU KAMBING PINK": {types:["150"], colors:["BLACK","GREY","RED","CREAM","OLD BLUE","PINK"]},
+  "TEA OCA": {types:["16oz","22s","22b","26b"], colors:["CREAM","MAGENTA","GREEN","BLACK"]}
+  "I JUICE": {types:["16oz","22slim"], colors:["YELLOW","ORANGE","RED","GREEN","BLACK","WHITE"]},
+  "HBD": {types:["22slim"], colors:["L.RED","RED","L.BLUE","D.BLUE","YELLOW","GREEN","D.GREEN"]},
+  "WALDO": {types:["12nat"], colors:["BLACK","BROWN","ORANGE"]},
+  "KRISTAL": {types:["14ushape"], colors:["BLACK","RED","YELLOW"]},
+  "JERUK PERAS": {types:["22slim"], colors:["BLACK","GREEN","ORANGE"]},
+  "SUSU SAPI BLUE": {types:["150ml"], colors:["BLACK","GREY","RED","CREAM","OLD BLUE","BLUE"]},
+  "SUSU KAMBING PINK": {types:["150ml"], colors:["BLACK","GREY","RED","CREAM","OLD BLUE","PINK"]},
+  "TEA OCA": {types:["16oz","22slim","22BIG","26BIG"], colors:["CREAM","MAGENTA","GREEN","BLACK"]}
+};
+var PRODUCT_NAMES = Object.keys(PRODUCTS);
+
+var SPAREPARTS = [
+["BEARING","1200","ROLL DIAMETER 60"],["BEARING","6000",""],["BEARING","6002","BEARING SCREW INFEED"],
+["BEARING","6003","PEMUTAR MANDRILL P1"],["BEARING","6004","VACUUM MOTOR"],["BEARING","6005","MANDRILL 8PCS/SET/MESIN"],
+["BEARING","6006","MANDRILL 8PCS/SET/MESIN"],["BEARING","6008",""],["BEARING","6201",""],["BEARING","6202",""],
+["BEARING","6203",""],["BEARING","6204","ROTARY JOINT"],["BEARING","6205",""],["BEARING","6206","VACUUM MOTOR"],
+["BEARING","6208",""],["BEARING","6209",""],["BEARING","6301",""],["BEARING","6306",""],["BEARING","6307",""],
+["BEARING","6308",""],["BEARING","6803",""],["BEARING","6904","ROLL DIAMETER 80"],["BEARING","607",""],
+["BEARING","CSK30-PP","ONE WAY ROLL CHILLER"],["BEARING","CF10B","SWING ROLL"],["BEARING","PSH10","TAROT SWING ROLL"],
+["BEARING","PSH10L","TAROT SWING ROLL"],["BEARING","H-E20205 J","GEARBOX BIGDRUM P1"],
+["BEARING","H-E20206 J","GEARBOX BIGDRUM P3"],["BEARING","NK 25/16R","ROLL BESI"],
+["BEARING","30205 JR","BEARING PAYUNG GEARBOX BIGDRUM P2, P3, P4"],["BEARING","30206 JR","BEARING PAYUNG GEARBOX BIGDRUM P2, P3, P5"],
+["BEARING","30207 JR","BEARING PAYUNG GEARBOX BIGDRUM P1"],["BEARING","KSM 51104",""],
+["VBELT","14M-1440-70",""],["VBELT","14M-1540-70","GEARBOX UTAMA P1"],["VBELT","5M-360-15","SCREW INFEED P2 & P3"],
+["VBELT","5M-385-15","SCREW INFEED P1"],["VBELT","5M-920",""],["VBELT","8M-1120-25","JOIN SCREW KE GEARBOX P1"],
+["VBELT","8M-1400-25","GEARBOX KE ATAS JOIN P1"],["VBELT","8M-2560","DINAMO UTAMA KE GEARBOX"],["VBELT","8M-440",""],
+["VBELT","8M-688-40",""],["VBELT","8M-776",""],["VBELT","8M-800-40",""],["VBELT","DS 1000X5","CUP OUT KE DINAMO"],
+["VBELT","DS 5M-1945X20","SCREW INFEED P3"],["VBELT","DS 5M-2100X20","SCREW INFEED P2"],
+["VBELT","DS 5M-2420-5","SCREW INFEED P1"],["VBELT","DS 5M-2420X15","SCREW INFEED P1"],
+["VBELT","DS D360L-44","CUP OUT KE DINAMO"],["VBELT","M-17","PEMUTAR MANDRILL ATAS P1"],
+["VBELT","M-21","PEMUTAR MANDRILL BAWAH P1"],["VBELT","M-24","PEMUTAR MANDRILL BAWAH P1"],
+["VBELT","S14M-1540-70","GEARBOX UTAMA P1"]
+];
+
+// Kolom target di sheet (1-based), sesuai layout laporan_bulanan_v3.xlsx
+// A TANGGAL(1) B SHIFT(2) C PRODUK(3) D TIPE(4) E HASIL(5) F R.POLOS(6) G R.PRINT(7) H JUMLAH[formula]
+// I C1(9) J C1.AWAL(10) K C1.AMBIL(11) L C1.AKHIR(12) M C1.PAKAI[formula]
+// ... pola sama tiap 5 kolom untuk C2..C7
+// AR M AWAL(44) AS M AMBIL(45) AT M AKHIR(46) AU M PAKAI[formula]
+// AV KETERANGAN(48) AW PELAPOR(49)
+var COLOR_BLOCK_START = 10; // J (bergeser +1 karena kolom BOX baru di posisi E)
+var METHANOL_AWAL_COL = 45;
+var KETERANGAN_COL = 49;
+var PELAPOR_COL = 50;
+
+var cache = {INP1:[],INP2:[],INP3:[],INP4:[],SPAREPART:[]};
+var activeTab = 'INP1';
+var draftShift = {INP1:1,INP2:1,INP3:1,INP4:1};
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function getAutoDateShift(){
+// now.getTime() sudah berupa epoch UTC absolut (tidak tergantung zona waktu HP),
+// jadi cukup tambahkan +7 jam untuk dapat waktu WIB -- TIDAK perlu (dan salah kalau)
+// masih dikurangi lagi dengan offset zona waktu perangkat.
+var now = new Date();
+var wib = new Date(now.getTime() + 7*3600000);
+var hours = wib.getUTCHours(), minutes = wib.getUTCMinutes();
+var totalMin = hours*60 + minutes;
+
+var shift, dayOffset;
+// Hari produksi baru dimulai jam 10:01 (awal shift 1). Sebelum itu -- baik
+// lanjutan shift 2 tengah malam maupun shift 3 -- masih dianggap bagian dari
+// hari produksi SEBELUMNYA, jadi tanggalnya ikut kemarin.
+if(totalMin >= 601 && totalMin <= 960){        // 10:01 - 16:00
+shift = 1; dayOffset = 0;
+} else if(totalMin >= 961){                     // 16:01 - 23:59
+shift = 2; dayOffset = 0;
+} else if(totalMin <= 120){                     // 00:00 - 02:00 (lanjutan shift 2 semalam)
+shift = 2; dayOffset = -1;
+} else {                                        // 02:01 - 10:00 (shift 3, masih hari produksi kemarin)
+shift = 3; dayOffset = -1;
+}
+
+var baseUTC = Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate());
+var d = new Date(baseUTC + dayOffset*86400000);
+var y = d.getUTCFullYear();
+var mo = String(d.getUTCMonth()+1).padStart(2,'0');
+var da = String(d.getUTCDate()).padStart(2,'0');
+return { dateStr: y+'-'+mo+'-'+da, shift: shift };
+}
+
+var pendingConfirmAction = null;
+function openConfirmModal(bodyHtml, onConfirm, opts){
+opts = opts || {};
+document.getElementById('lhModalBody').innerHTML = bodyHtml;
+document.getElementById('lhModalConfirm').textContent = opts.confirmLabel || 'Ya, Kirim Laporan';
+document.getElementById('lhModalCancel').textContent = opts.cancelLabel || 'Batal, Periksa Lagi';
+document.getElementById('lhModalOverlay').classList.add('show');
+pendingConfirmAction = onConfirm;
+}
+function closeConfirmModal(){
+document.getElementById('lhModalOverlay').classList.remove('show');
+pendingConfirmAction = null;
+}
+function initConfirmModal(){
+document.getElementById('lhModalCancel').addEventListener('click', closeConfirmModal);
+document.getElementById('lhModalConfirm').addEventListener('click', async function(){
+var btn = this;
+if(btn.disabled) return; // cegah klik dobel saat sedang mengirim
+if(!pendingConfirmAction) return;
+btn.disabled = true;
+var originalText = btn.textContent;
+btn.textContent = 'Mengirim...';
+try{
+await pendingConfirmAction();
+} finally {
+btn.disabled = false;
+btn.textContent = originalText;
+closeConfirmModal();
+}
+});
+}
+function esc(s){ return (s===undefined||s===null)?'':String(s).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+var MONTHS_ID = ['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'];
+function fmtID(n, decimals){
+if(!isFinite(n)) n = 0;
+return n.toLocaleString('id-ID', {minimumFractionDigits: decimals||0, maximumFractionDigits: decimals||2});
+}
+function toast(msg){
+var t=document.getElementById('lhToast'); t.textContent=msg; t.classList.add('show');
+clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+function setStatus(msg, kind){
+var el = document.getElementById('connectStatus');
+el.textContent = msg;
+el.className = kind ? ('status-'+kind) : '';
+el.style.display = msg ? 'block' : 'none';
+}
+
+async function verifyConnection(scriptUrl, sheetId){
+var verifyUrl = scriptUrl + (scriptUrl.indexOf('?')>-1 ? '&' : '?') + 'action=verify&spreadsheetId=' + encodeURIComponent(sheetId);
+var res = await fetch(verifyUrl, {method:'GET'});
+var data = await res.json();
+return data;
+}
+
+async function attemptConnect(){
+var scriptInput = document.getElementById('scriptUrlInput');
+var sheetInput = document.getElementById('sheetIdInput');
+var btn = document.getElementById('btnConnect');
+var url = scriptInput.value.trim();
+var sheetId = extractSheetId(sheetInput.value);
+
+if(!url || url.indexOf('PASTE_') === 0){ setStatus('Isi dulu URL Web App Apps Script.', 'err'); return; }
+if(!sheetId){ setStatus('Isi dulu link atau ID spreadsheet.', 'err'); return; }
+
+btn.disabled = true;
+setStatus('Menghubungkan...', 'warn');
+SCRIPT_URL = url;
+SPREADSHEET_ID = sheetId;
+
+try{
+var data = await verifyConnection(url, sheetId);
+if(data && data.ok){
+setStatus('', null);
+showConnectedBadge(data.name);
+toast('Terhubung ke "'+data.name+'".');
+} else {
+setStatus('Gagal terhubung: ' + (data && data.error ? data.error : 'ID atau URL tidak valid.'), 'err');
+}
+}catch(e){
+// kemungkinan dibatasi CORS oleh browser -- tetap simpan koneksi tapi tanpa nama terverifikasi
+setStatus('Tidak bisa memverifikasi nama file (kemungkinan dibatasi browser), tapi koneksi tetap disimpan.', 'warn');
+showConnectedBadge(null);
+}
+btn.disabled = false;
+}
+
+function checkSetup(){
+var urlSheet = getUrlParam('sheet');
+if(urlSheet){ SPREADSHEET_ID = extractSheetId(urlSheet); }
+
+var needsScript = !SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0;
+var needsSheet = !SPREADSHEET_ID;
+
+document.getElementById('btnConnect').addEventListener('click', attemptConnect);
+
+if(needsScript || needsSheet){
+document.getElementById('lhSetup').style.display = 'block';
+document.getElementById('lhSetupOk').style.display = 'none';
+var scriptInput = document.getElementById('scriptUrlInput');
+var sheetInput = document.getElementById('sheetIdInput');
+if(!needsScript) scriptInput.value = SCRIPT_URL;
+if(!needsSheet) sheetInput.value = SPREADSHEET_ID;
+return false;
+}
+// sudah ada konfigurasi (mis. dari ?sheet= di URL) -- coba verifikasi otomatis
+document.getElementById('scriptUrlInput').value = SCRIPT_URL;
+document.getElementById('sheetIdInput').value = SPREADSHEET_ID;
+attemptConnect();
+return true;
+}
+
+function showConnectedBadge(name){
+if(!SPREADSHEET_ID) return;
+document.getElementById('lhSetup').style.display = 'none';
+document.getElementById('lhSetupOk').style.display = 'block';
+document.getElementById('activeSheetName').textContent = name || '(nama tidak terverifikasi)';
+document.getElementById('activeSheetId').textContent = SPREADSHEET_ID;
+document.getElementById('changeSheetLink').onclick = function(ev){
+ev.preventDefault();
+document.getElementById('lhSetup').style.display = 'block';
+document.getElementById('lhSetupOk').style.display = 'none';
+document.getElementById('sheetIdInput').value = SPREADSHEET_ID;
+setStatus('', null);
+};
+}
+
+async function sendToSheet(sheetName, values){
+var scriptInput = document.getElementById('scriptUrlInput');
+var sheetInput = document.getElementById('sheetIdInput');
+if((!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0) && scriptInput && scriptInput.value.trim()){
+SCRIPT_URL = scriptInput.value.trim();
+}
+if(!SPREADSHEET_ID && sheetInput && sheetInput.value.trim()){
+SPREADSHEET_ID = extractSheetId(sheetInput.value);
+}
+if(!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0){
+toast('Belum ada URL Apps Script. Tempel dulu di kotak atas.');
+return false;
+}
+if(!SPREADSHEET_ID){
+toast('Belum ada ID spreadsheet bulan ini. Tempel dulu di kotak atas.');
+return false;
+}
+try{
+await fetch(SCRIPT_URL, {
+method: 'POST',
+mode: 'no-cors',
+headers: {'Content-Type':'text/plain;charset=utf-8'},
+body: JSON.stringify({ spreadsheetId: SPREADSHEET_ID, sheet: sheetName, values: values })
+});
+// mode no-cors -> respons tidak bisa dibaca, kita anggap terkirim
+return true;
+}catch(e){
+toast('Gagal mengirim (cek koneksi internet).');
+return false;
+}
+}
+
+function renderTabs(){
+var wrap = document.getElementById('lhTabs');
+var order = ['INP1','INP2','INP3','INP4','SPAREPART'];
+wrap.innerHTML = order.map(function(k){
+var m = META[k];
+var count = (cache[k]||[]).filter(function(e){return e.tanggal===todayStr();}).length;
+return '<div class="lh-tab'+(k===activeTab?' active':'')+'" data-tab="'+k+'" style="--accent:'+m.color+'">'+
+'<span class="dot"></span>'+m.short+
+(count>0?' <span style="color:var(--accent); font-weight:700">('+count+')</span>':'')+
+'</div>';
+}).join('');
+Array.prototype.forEach.call(wrap.querySelectorAll('.lh-tab'), function(el){
+el.addEventListener('click', function(){ confirmSwitchTab(el.getAttribute('data-tab')); });
+});
+}
+
+function confirmSwitchTab(tab){
+if(tab === activeTab) return; // sudah di tab ini, tidak perlu konfirmasi
+var m = META[tab];
+var body =
+'<div style="text-align:center; padding:6px 0 4px">'+
+'<div style="font-size:13px; color:#333333; margin-bottom:6px">Anda akan mengisi laporan untuk:</div>'+
+'<div style="font-family:\'Space Grotesk\',sans-serif; font-weight:700; font-size:22px; color:'+m.color+'">'+esc(m.label)+'</div>'+
+'<div style="font-size:12px; color:#555555; margin-top:8px">Pastikan pilihan ini sudah benar sebelum melanjutkan.</div>'+
+'</div>';
+openConfirmModal(body, function(){ switchTab(tab); }, {
+confirmLabel: 'Ya, Pilih ' + m.label,
+cancelLabel: 'Batal'
+});
+}
+
+function switchTab(tab){
+activeTab = tab;
+renderTabs();
+if(tab==='SPAREPART') renderSparepartPanel(); else renderMachinePanel(tab);
+}
+
+function renderMachinePanel(tab){
+var m = META[tab];
+var body = document.getElementById('lhBody');
+body.style.setProperty('--accent', m.color);
+var productOptions = PRODUCT_NAMES.map(function(p){return '<option value="'+esc(p)+'">'+esc(p)+'</option>';}).join('');
+
+var auto = getAutoDateShift();
+draftShift[tab] = auto.shift;
+
+body.innerHTML =
+'<div class="lh-section-title">Laporan '+m.label+'</div>'+
+'<div class="lh-grid" style="margin-top:6px">'+
+'<div class="lh-field"><label>Tanggal</label><input type="date" id="f_tanggal" value="'+auto.dateStr+'"></div>'+
+'<div class="lh-field"><label>Shift</label><div class="lh-shift" id="f_shift">'+
+[1,2,3].map(function(s){return '<button type="button" data-shift="'+s+'" class="'+(draftShift[tab]===s?'active':'')+'">'+s+'</button>';}).join('')+
+'</div></div>'+
+'<div class="lh-field"><label>Produk</label><select id="f_produk">'+productOptions+'</select></div>'+
+'</div>'+
+'<div class="lh-grid g2" style="margin-top:10px">'+
+'<div class="lh-field"><label>Tipe</label><select id="f_tipe"></select></div>'+
+'<div class="lh-field"><label>Nama Operator (pisah koma jika &gt;1) <span style="color:var(--bad)">*wajib</span></label><input type="text" id="f_pelapor" placeholder="mis. Anam, Dimas"></div>'+
+'</div>'+
+'<div class="lh-section-title">Standar Packing</div>'+
+'<div class="lh-grid g2">'+
+'<div class="lh-field"><label>Jumlah Cup per Box (pcs) <span style="color:var(--bad)">*wajib</span></label><input type="number" id="f_cupsbox" min="0" placeholder="mis. 2000"></div>'+
+'<div class="lh-field"><label>Standar Berat Cup (gr) <span style="color:var(--bad)">*wajib</span></label><input type="number" id="f_cupweight" min="0" step="0.01" placeholder="mis. 2"></div>'+
+'</div>'+
+'<div class="lh-note">Standar Berat Cup dipakai untuk mengubah berat reject (kg) yang Anda input di bawah menjadi jumlah pcs otomatis sebelum dikirim ke spreadsheet.</div>'+
+
+'<div class="lh-section-title">Hasil Produksi</div>'+
+'<div class="lh-grid">'+
+'<div class="lh-field"><label>Hasil (box)</label><input type="number" id="f_hasil" min="0" step="0.01"><div class="lh-note" style="margin-top:4px">≈ <span id="f_hasil_pcs">0</span> pcs</div></div>'+
+'<div class="lh-field"><label>Reject Polos (kg)</label><input type="number" id="f_rpolos" min="0" step="0.01"><div class="lh-note" style="margin-top:4px">≈ <span id="f_rpolos_pcs">0</span> pcs</div></div>'+
+'<div class="lh-field"><label>Reject Print (kg)</label><input type="number" id="f_rprint" min="0" step="0.01"><div class="lh-note" style="margin-top:4px">≈ <span id="f_rprint_pcs">0</span> pcs</div></div>'+
+'</div>'+
+'<div class="lh-counter" style="margin-top:10px"><div class="lh-counter-head"><div class="name">JUMLAH (Hasil + Reject Polos + Reject Print, dalam pcs)</div><div class="pakai" id="f_jumlah_display">0</div></div></div>'+
+'<div class="lh-section-title">Pemakaian Tinta (Drum)</div>'+
+'<div id="f_colors"></div>'+
+'<div class="lh-section-title">Pemakaian Methanol</div>'+
+'<div id="f_methanol"></div>'+
+'<div class="lh-section-title">Keterangan</div>'+
+'<div class="lh-field"><textarea id="f_ket" placeholder="Catatan gangguan, setting, perbaikan, dll. (satu baris = satu poin)"></textarea></div>'+
+'<button class="lh-btn lh-btn-primary" id="btnSave">Simpan Laporan</button>'+
+'<div class="lh-note">Ada 2 produk dalam shift yang sama? Simpan laporan produk pertama, lalu ulangi form dengan tanggal &amp; shift yang sama untuk produk kedua — keduanya masuk sebagai baris terpisah.</div>'+
+
+'<div class="lh-section-title">Teks Laporan (Salin ke WhatsApp)</div>'+
+'<div class="lh-field"><textarea id="waText" readonly style="min-height:220px; font-family:\'JetBrains Mono\',monospace; font-size:12.5px; white-space:pre; line-height:1.5;"></textarea></div>'+
+'<button class="lh-btn lh-btn-connect" id="btnCopyWa" type="button" style="margin-top:8px">Salin Teks</button>'+
+
+'<div class="lh-log"><div class="lh-section-title">Laporan Terakhir Dikirim (sesi ini)</div><div id="logList"></div></div>';
+
+Array.prototype.forEach.call(document.getElementById('f_shift').querySelectorAll('button'), function(b){
+b.addEventListener('click', function(){
+draftShift[tab] = parseInt(b.getAttribute('data-shift'),10);
+Array.prototype.forEach.call(document.getElementById('f_shift').querySelectorAll('button'), function(x){x.classList.remove('active');});
+b.classList.add('active');
+if(typeof buildWaText === 'function') buildWaText();
+});
+});
+
+var produkSel = document.getElementById('f_produk');
+produkSel.addEventListener('change', function(){ updateTipeAndColors(); if(typeof buildWaText === 'function') buildWaText(); });
+function updateTipeAndColors(){
+var info = PRODUCTS[produkSel.value] || {types:[],colors:[]};
+document.getElementById('f_tipe').innerHTML = info.types.map(function(t){return '<option value="'+esc(t)+'">'+esc(t)+'</option>';}).join('');
+document.getElementById('f_colors').innerHTML = info.colors.map(function(c, idx){ return colorCard('C'+(idx+1), c); }).join('');
+document.getElementById('f_methanol').innerHTML = methanolCard();
+attachPakaiListeners();
+}
+function colorCard(code, colorName){
+return '<div class="lh-counter" data-color-code="'+esc(code)+'" data-color-name="'+esc(colorName)+'">'+
+'<div class="lh-counter-head"><div class="name">'+code+' &middot; <span class="tag">'+esc(colorName)+'</span></div><div class="pakai" data-pakai="0">PAKAI 0</div></div>'+
+'<div class="lh-counter-row">'+
+'<div class="lh-field"><label>Awal</label><input type="number" class="c-awal" min="0" value="0"></div>'+
+'<div class="lh-field"><label>Ambil</label><input type="number" class="c-ambil" min="0" value="0"></div>'+
+'<div class="lh-field"><label>Akhir</label><input type="number" class="c-akhir" min="0" value="0"></div>'+
+'</div></div>';
+}
+function methanolCard(){
+return '<div class="lh-counter" data-methanol="1">'+
+'<div class="lh-counter-head"><div class="name">METHANOL</div><div class="pakai" data-pakai="0">PAKAI 0</div></div>'+
+'<div class="lh-counter-row">'+
+'<div class="lh-field"><label>Awal</label><input type="number" class="c-awal" min="0" value="0"></div>'+
+'<div class="lh-field"><label>Ambil</label><input type="number" class="c-ambil" min="0" value="0"></div>'+
+'<div class="lh-field"><label>Akhir</label><input type="number" class="c-akhir" min="0" value="0"></div>'+
+'</div></div>';
+}
+function attachPakaiListeners(){
+Array.prototype.forEach.call(document.querySelectorAll('#f_colors .lh-counter, #f_methanol .lh-counter'), function(card){
+var awal=card.querySelector('.c-awal'), ambil=card.querySelector('.c-ambil'), akhir=card.querySelector('.c-akhir');
+var pakaiEl = card.querySelector('[data-pakai]');
+function recalc(){
+var v = (parseFloat(awal.value)||0)+(parseFloat(ambil.value)||0)-(parseFloat(akhir.value)||0);
+pakaiEl.textContent = 'PAKAI '+v; pakaiEl.setAttribute('data-pakai', v);
+}
+[awal,ambil,akhir].forEach(function(i){ i.addEventListener('input', recalc); });
+});
+}
+updateTipeAndColors();
+
+function kgToPcs(kg){
+var cupWeight = parseFloat(document.getElementById('f_cupweight').value)||0;
+return cupWeight > 0 ? Math.ceil(kg * 1000 / cupWeight) : 0;
+}
+function boxToPcs(box){
+var cupsPerBox = parseFloat(document.getElementById('f_cupsbox').value)||0;
+return cupsPerBox > 0 ? Math.round(box * cupsPerBox) : 0;
+}
+
+function recalcJumlah(){
+var hBox = parseFloat(document.getElementById('f_hasil').value)||0;
+var rpKg = parseFloat(document.getElementById('f_rpolos').value)||0;
+var rprKg = parseFloat(document.getElementById('f_rprint').value)||0;
+var hPcs = boxToPcs(hBox);
+var rpPcs = kgToPcs(rpKg);
+var rprPcs = kgToPcs(rprKg);
+document.getElementById('f_hasil_pcs').textContent = fmtID(hPcs, 0);
+document.getElementById('f_rpolos_pcs').textContent = fmtID(rpPcs, 0);
+document.getElementById('f_rprint_pcs').textContent = fmtID(rprPcs, 0);
+document.getElementById('f_jumlah_display').textContent = fmtID(hPcs + rpPcs + rprPcs, 0);
+}
+['f_hasil','f_rpolos','f_rprint','f_cupweight','f_cupsbox'].forEach(function(id){
+document.getElementById(id).addEventListener('input', recalcJumlah);
+});
+recalcJumlah();
+
+function buildWaText(){
+var tanggal = document.getElementById('f_tanggal').value;
+var produk = produkSel.value || '';
+var tipe = document.getElementById('f_tipe').value || '';
+var hasilBox = parseFloat(document.getElementById('f_hasil').value)||0;
+var rpolosKg = parseFloat(document.getElementById('f_rpolos').value)||0;
+var rprintKg = parseFloat(document.getElementById('f_rprint').value)||0;
+var hasilPcs = boxToPcs(hasilBox);
+var rpolosPcs = kgToPcs(rpolosKg);
+var rprintPcs = kgToPcs(rprintKg);
+var pelaporRaw = document.getElementById('f_pelapor').value || '';
+var ketRaw = document.getElementById('f_ket').value || '';
+
+var total = hasilPcs + rpolosPcs + rprintPcs;
+var tipeDisplay = /^\d+$/.test(tipe) ? (tipe + ' ML') : tipe;
+
+var dateStr = '-';
+if(tanggal){
+var dp = tanggal.split('-');
+dateStr = parseInt(dp[2],10) + ' ' + MONTHS_ID[parseInt(dp[1],10)-1] + ' ' + dp[0];
+}
+
+var ketLines = ketRaw.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+if(!ketLines.length) ketLines = ['-'];
+var nameLines = pelaporRaw.split(',').map(function(s){return s.trim();}).filter(Boolean);
+if(!nameLines.length) nameLines = ['-'];
+
+var lines = [];
+lines.push('Laporan printing');
+lines.push('tanggal ' + dateStr + ' Shift ' + draftShift[tab]);
+lines.push('( ' + m.label + ' )');
+lines.push((produk + ' ' + tipeDisplay).trim());
+lines.push('Hasil       :  ' + fmtID(hasilPcs,0) + 'pcs ( ' + fmtID(hasilBox,0) + ' box )');
+lines.push('R.cup      :  ' + fmtID(rpolosPcs,0) + ' pcs     (' + fmtID(rpolosKg,1) + 'kg)');
+lines.push('R.print      :  ' + fmtID(rprintPcs,0) + ' pcs      ( ' + fmtID(rprintKg,1) + 'kg)');
+lines.push('Total bahan : ' + fmtID(total,0) + ' pcs');
+lines.push('');
+
+var colorCards = document.querySelectorAll('#f_colors .lh-counter');
+if(colorCards.length){
+lines.push('Tinta:');
+Array.prototype.forEach.call(colorCards, function(card){
+var code = card.getAttribute('data-color-code');
+var name = card.getAttribute('data-color-name');
+var awal = parseFloat(card.querySelector('.c-awal').value)||0;
+var ambil = parseFloat(card.querySelector('.c-ambil').value)||0;
+var akhir = parseFloat(card.querySelector('.c-akhir').value)||0;
+var pakai = parseFloat(card.querySelector('[data-pakai]').getAttribute('data-pakai'))||0;
+lines.push('- ' + code + ' (' + name + ') : Awal ' + fmtID(awal,0) + ', Ambil ' + fmtID(ambil,0) + ', Akhir ' + fmtID(akhir,0) + ' (Pakai ' + fmtID(pakai,0) + ')');
+});
+lines.push('');
+}
+
+var mCardWa = document.querySelector('#f_methanol .lh-counter');
+if(mCardWa){
+var mAwal = parseFloat(mCardWa.querySelector('.c-awal').value)||0;
+var mAmbil = parseFloat(mCardWa.querySelector('.c-ambil').value)||0;
+var mAkhir = parseFloat(mCardWa.querySelector('.c-akhir').value)||0;
+var mPakai = parseFloat(mCardWa.querySelector('[data-pakai]').getAttribute('data-pakai'))||0;
+lines.push('Methanol : Awal ' + fmtID(mAwal,0) + ', Ambil ' + fmtID(mAmbil,0) + ', Akhir ' + fmtID(mAkhir,0) + ' (Pakai ' + fmtID(mPakai,0) + ')');
+lines.push('');
+}
+
+lines.push('Ket');
+ketLines.forEach(function(l){ lines.push('- ' + l); });
+lines.push('');
+lines.push('OPERATOR');
+nameLines.forEach(function(n){ lines.push('- ' + n); });
+
+document.getElementById('waText').value = lines.join('\n');
+}
+
+body.addEventListener('input', buildWaText);
+body.addEventListener('change', buildWaText);
+buildWaText();
+
+document.getElementById('btnCopyWa').addEventListener('click', function(){
+var ta = document.getElementById('waText');
+ta.select();
+ta.setSelectionRange(0, 999999);
+var copied = false;
+if(navigator.clipboard && navigator.clipboard.writeText){
+navigator.clipboard.writeText(ta.value).then(function(){ toast('Teks laporan disalin.'); }).catch(function(){
+try{ document.execCommand('copy'); toast('Teks laporan disalin.'); }catch(e){ toast('Gagal menyalin, salin manual dari kotak teks.'); }
+});
+} else {
+try{ document.execCommand('copy'); toast('Teks laporan disalin.'); }catch(e){ toast('Gagal menyalin, salin manual dari kotak teks.'); }
+}
+});
+
+document.getElementById('btnSave').addEventListener('click', function(){ confirmAndSaveMachineEntry(tab); });
+renderLog(tab);
+}
+
+function confirmAndSaveMachineEntry(tab){
+var tanggal = document.getElementById('f_tanggal').value;
+var produk = document.getElementById('f_produk').value;
+var tipe = document.getElementById('f_tipe').value;
+if(!tanggal || !produk || !tipe){ toast('Lengkapi tanggal, produk, dan tipe dulu.'); return; }
+
+var pelapor = document.getElementById('f_pelapor').value.trim();
+if(!pelapor){ toast('Isi dulu Nama Operator sebelum submit.'); return; }
+
+var cupsPerBox = parseFloat(document.getElementById('f_cupsbox').value)||0;
+var cupWeight = parseFloat(document.getElementById('f_cupweight').value)||0;
+if(cupsPerBox <= 0 || cupWeight <= 0){
+toast('Isi dulu Standar Packing (Jumlah Cup per Box & Standar Berat Cup) sebelum submit.');
+return;
+}
+var hasilBox = parseFloat(document.getElementById('f_hasil').value)||0;
+var rpolosKg = parseFloat(document.getElementById('f_rpolos').value)||0;
+var rprintKg = parseFloat(document.getElementById('f_rprint').value)||0;
+var hasilPcs = Math.round(hasilBox * cupsPerBox);
+var rpolosPcs = Math.ceil(rpolosKg * 1000 / cupWeight);
+var rprintPcs = Math.ceil(rprintKg * 1000 / cupWeight);
+var shift = draftShift[tab];
+var ket = document.getElementById('f_ket').value||'';
+
+var values = {};
+values[1] = tanggal;
+values[2] = shift;
+values[3] = produk;
+values[4] = tipe;
+values[5] = hasilBox;
+values[6] = hasilPcs;
+values[7] = rpolosPcs;
+values[8] = rprintPcs;
+
+var colorCards = document.querySelectorAll('#f_colors .lh-counter');
+Array.prototype.forEach.call(colorCards, function(card, idx){
+var base = COLOR_BLOCK_START + idx*5;   // J, O, T, Y, AD, AI, AN
+// nama warna (base) TIDAK dikirim -- sudah otomatis terisi via rumus VLOOKUP ke sheet Warna
+values[base+1] = parseFloat(card.querySelector('.c-awal').value)||0;
+values[base+2] = parseFloat(card.querySelector('.c-ambil').value)||0;
+values[base+3] = parseFloat(card.querySelector('.c-akhir').value)||0;
+// base+4 = PAKAI, rumus otomatis, tidak dikirim
+});
+var mCard = document.querySelector('#f_methanol .lh-counter');
+values[METHANOL_AWAL_COL] = parseFloat(mCard.querySelector('.c-awal').value)||0;
+values[METHANOL_AWAL_COL+1] = parseFloat(mCard.querySelector('.c-ambil').value)||0;
+values[METHANOL_AWAL_COL+2] = parseFloat(mCard.querySelector('.c-akhir').value)||0;
+values[KETERANGAN_COL] = ket;
+values[PELAPOR_COL] = pelapor;
+
+var m = META[tab];
+var summary =
+'<div class="row"><span class="k">Mesin</span><span class="v">'+esc(m.label)+'</span></div>'+
+'<div class="row"><span class="k">Tanggal</span><span class="v">'+esc(tanggal)+'</span></div>'+
+'<div class="row"><span class="k">Shift</span><span class="v">'+esc(shift)+'</span></div>'+
+'<div class="row"><span class="k">Produk</span><span class="v">'+esc(produk)+' '+esc(tipe)+'</span></div>'+
+'<div class="row"><span class="k">Hasil</span><span class="v">'+fmtID(hasilBox,2)+' box ≈ '+fmtID(hasilPcs,0)+' pcs</span></div>'+
+'<div class="row"><span class="k">Reject Polos</span><span class="v">'+fmtID(rpolosKg,2)+' kg ≈ '+fmtID(rpolosPcs,0)+' pcs</span></div>'+
+'<div class="row"><span class="k">Reject Print</span><span class="v">'+fmtID(rprintKg,2)+' kg ≈ '+fmtID(rprintPcs,0)+' pcs</span></div>'+
+'<div class="row"><span class="k">Operator</span><span class="v">'+esc(pelapor)+'</span></div>'+
+'<div class="row"><span class="k">Keterangan</span><span class="v">'+esc(ket||'-')+'</span></div>';
+
+openConfirmModal(summary, async function(){
+await submitMachineEntry(tab, values, {tanggal:tanggal, shift:shift, produk:produk, tipe:tipe, hasilPcs:hasilPcs, ket:ket, pelapor:pelapor});
+});
+}
+
+async function submitMachineEntry(tab, values, meta){
+toast('Mengirim...');
+var ok = await sendToSheet(tab, values);
+if(ok){
+var entry = {tanggal:meta.tanggal, shift:meta.shift, produk:meta.produk, tipe:meta.tipe,
+hasil:meta.hasilPcs, keterangan:meta.ket, pelapor:meta.pelapor};
+cache[tab] = (cache[tab]||[]);
+cache[tab].unshift(entry);
+cache[tab] = cache[tab].slice(0,25);
+toast('Laporan '+META[tab].label+' terkirim ke Google Sheet.');
+renderTabs();
+renderLog(tab);
+document.getElementById('f_hasil').value='';
+document.getElementById('f_rpolos').value='';
+document.getElementById('f_rprint').value='';
+document.getElementById('f_hasil_pcs').textContent='0';
+document.getElementById('f_rpolos_pcs').textContent='0';
+document.getElementById('f_rprint_pcs').textContent='0';
+document.getElementById('f_jumlah_display').textContent='0';
+document.getElementById('f_ket').value='';
+Array.prototype.forEach.call(document.querySelectorAll('#f_colors input, #f_methanol input'), function(i){ i.value=0; });
+Array.prototype.forEach.call(document.querySelectorAll('[data-pakai]'), function(p){ p.textContent='PAKAI 0'; p.setAttribute('data-pakai','0'); });
+}
+}
+
+function renderLog(tab){
+var list = document.getElementById('logList');
+if(!list) return;
+var entries = cache[tab]||[];
+if(!entries.length){ list.innerHTML = '<div class="lh-log-empty">Belum ada laporan dikirim di sesi ini.</div>'; return; }
+list.innerHTML = entries.map(function(e){
+return '<div class="lh-entry">'+
+'<div class="meta">'+esc(e.tanggal)+' &middot; SHIFT '+esc(e.shift)+' &middot; '+esc(e.pelapor||'-')+'</div>'+
+'<div class="main">'+esc(e.produk)+' — '+esc(e.tipe)+' &middot; Hasil '+esc(e.hasil)+' pcs</div>'+
+'<div class="sub">'+esc(e.keterangan||'—')+'</div>'+
+'</div>';
+}).join('');
+}
+
+/* ---------- SPAREPART ---------- */
+function renderSparepartPanel(){
+var m = META.SPAREPART;
+var body = document.getElementById('lhBody');
+body.style.setProperty('--accent', m.color);
+var datalistOpts = SPAREPARTS.map(function(row){ return '<option value="'+esc(row[0]+' '+row[1])+'">'; }).join('');
+
+body.innerHTML =
+'<div class="lh-section-title">Laporan Keluar-Masuk Sparepart</div>'+
+'<div class="lh-grid g2" style="margin-top:6px">'+
+'<div class="lh-field"><label>Tanggal</label><input type="date" id="s_tanggal" value="'+getAutoDateShift().dateStr+'"></div>'+
+'<div class="lh-field"><label>Nama Pelapor</label><input type="text" id="s_pelapor" placeholder="Nama operator/gudang"></div>'+
+'</div>'+
+'<div class="lh-grid g2" style="margin-top:10px">'+
+'<div class="lh-field"><label>Cari Item + Tipe</label><input type="text" id="s_pick" list="sp_list" placeholder="mis. BEARING 6203"><datalist id="sp_list">'+datalistOpts+'</datalist></div>'+
+'<div class="lh-field"><label>Fungsi (otomatis)</label><input type="text" id="s_fungsi" readonly></div>'+
+'</div>'+
+'<div class="lh-grid g2" style="margin-top:10px">'+
+'<div class="lh-field"><label>Masuk (qty)</label><input type="number" id="s_masuk" min="0" value="0"></div>'+
+'<div class="lh-field"><label>Keluar (qty)</label><input type="number" id="s_keluar" min="0" value="0"></div>'+
+'</div>'+
+'<div class="lh-section-title">Keterangan</div>'+
+'<div class="lh-field"><textarea id="s_ket" placeholder="Untuk perbaikan apa, mesin mana, dll."></textarea></div>'+
+'<button class="lh-btn lh-btn-primary" id="btnSaveSp">Simpan Laporan</button>'+
+'<div class="lh-log"><div class="lh-section-title">Laporan Terakhir Dikirim (sesi ini)</div><div id="logList"></div></div>';
+
+document.getElementById('s_pick').addEventListener('input', function(){
+var val = this.value.trim();
+var match = SPAREPARTS.find(function(row){ return (row[0]+' '+row[1]).toLowerCase()===val.toLowerCase(); });
+document.getElementById('s_fungsi').value = match ? (match[2]||'—') : '';
+});
+document.getElementById('btnSaveSp').addEventListener('click', confirmAndSaveSparepartEntry);
+renderSparepartLog();
+}
+
+function confirmAndSaveSparepartEntry(){
+var tanggal = document.getElementById('s_tanggal').value;
+var val = document.getElementById('s_pick').value.trim();
+var match = SPAREPARTS.find(function(row){ return (row[0]+' '+row[1]).toLowerCase()===val.toLowerCase(); });
+var item, tipe;
+if(match){ item=match[0]; tipe=match[1]; }
+else { var parts = val.split(' '); item=parts[0]||''; tipe=parts.slice(1).join(' '); }
+var masuk = parseFloat(document.getElementById('s_masuk').value)||0;
+var keluar = parseFloat(document.getElementById('s_keluar').value)||0;
+var ket = document.getElementById('s_ket').value||'';
+var pelapor = document.getElementById('s_pelapor').value||'';
+if(!tanggal || !item){ toast('Lengkapi tanggal dan item dulu.'); return; }
+if(masuk===0 && keluar===0){ toast('Isi jumlah Masuk atau Keluar.'); return; }
+
+// INSP columns: 1 CODE(formula,skip) 2 TANGGAL 3 ITEM 4 TIPE 5 MASUK 6 KELUAR 7 KETERANGAN 8 PELAPOR
+var values = {2:tanggal, 3:item, 4:tipe, 5:masuk||'', 6:keluar||'', 7:ket, 8:pelapor};
+var meta = {tanggal:tanggal, item:item, tipe:tipe, masuk:masuk, keluar:keluar, keterangan:ket};
+
+var summary =
+'<div class="row"><span class="k">Tanggal</span><span class="v">'+esc(tanggal)+'</span></div>'+
+'<div class="row"><span class="k">Item</span><span class="v">'+esc(item)+' '+esc(tipe)+'</span></div>'+
+'<div class="row"><span class="k">Masuk</span><span class="v">'+fmtID(masuk,0)+'</span></div>'+
+'<div class="row"><span class="k">Keluar</span><span class="v">'+fmtID(keluar,0)+'</span></div>'+
+'<div class="row"><span class="k">Pelapor</span><span class="v">'+esc(pelapor||'-')+'</span></div>'+
+'<div class="row"><span class="k">Keterangan</span><span class="v">'+esc(ket||'-')+'</span></div>';
+
+openConfirmModal(summary, async function(){
+await submitSparepartEntry(values, meta);
+});
+}
+
+async function submitSparepartEntry(values, meta){
+toast('Mengirim...');
+var ok = await sendToSheet('INSP', values);
+if(ok){
+cache.SPAREPART = (cache.SPAREPART||[]);
+cache.SPAREPART.unshift(meta);
+cache.SPAREPART = cache.SPAREPART.slice(0,25);
+toast('Laporan sparepart terkirim ke Google Sheet.');
+renderSparepartLog();
+document.getElementById('s_masuk').value=0;
+document.getElementById('s_keluar').value=0;
+document.getElementById('s_ket').value='';
+document.getElementById('s_pick').value='';
+document.getElementById('s_fungsi').value='';
+}
+}
+
+function renderSparepartLog(){
+var list = document.getElementById('logList');
+if(!list) return;
+var entries = cache.SPAREPART||[];
+if(!entries.length){ list.innerHTML = '<div class="lh-log-empty">Belum ada laporan dikirim di sesi ini.</div>'; return; }
+list.innerHTML = entries.map(function(e){
+var dir = e.masuk>0 ? ('+'+e.masuk+' masuk') : '';
+var dir2 = e.keluar>0 ? ('-'+e.keluar+' keluar') : '';
+return '<div class="lh-entry">'+
+'<div class="meta">'+esc(e.tanggal)+'</div>'+
+'<div class="main">'+esc(e.item)+' '+esc(e.tipe)+' &middot; '+[dir,dir2].filter(Boolean).join(' / ')+'</div>'+
+'<div class="sub">'+esc(e.keterangan||'—')+'</div>'+
+'</div>';
+}).join('');
+}
+
+function init(){
+initConfirmModal();
+checkSetup();
+renderTabs();
+renderMachinePanel('INP1');
+}
+init();
+
+})();
+</script>
